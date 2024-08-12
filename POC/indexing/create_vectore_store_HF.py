@@ -28,10 +28,13 @@ def generate_valid_collection_name(model_name):
 
     return collection_name
 
+
+# Define the relative path
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SOURCE_DATA_PATH = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'data', 'ESCO dataset - v1.1.1 - classification - en - csv'))
 # Define paths and constants
-SOURCE_DATA_PATH = r"CareerBot-RAG\data\ESCO dataset - v1.1.1 - classification - en - csv"
-EMBEDDING_MODEL_NAME = "BAAI/bge-m3" #model name from HuggingFace mixedbread-ai/mxbai-embed-large-v1, intfloat/e5-large-v2, ...
-DATABASE_DIR = r"CareerBot-RAG\data\processed_data\ESCO_embeddings"
+EMBEDDING_MODEL_NAME = "BAAI/bge-m3" #model name from HuggingFace mixedbread-ai/mxbai-embed-large-v1, intfloat/e5-large-
+DATABASE_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'data','processed_data', 'ESCO_embeddings'))
 COLLECTION_NAME = generate_valid_collection_name(EMBEDDING_MODEL_NAME)
 BATCH_SIZE = 5461  # Define the batch size as per the chroma client limit, it's not chunking !
 
@@ -50,7 +53,7 @@ except Exception as e:
 
     # Deleting old collection if it exists with low ammount of data, avoiding name colision
     try:
-        chroma_client.delete_collection(COLLECTION_NAME) 
+        chroma_client.delete_collection(COLLECTION_NAME)
     except Exception as e:
         logging.info("No existing collection to delete")
 
