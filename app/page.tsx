@@ -50,7 +50,7 @@ export default function Home() {
 
       <header className="flex justify-between items-center p-4 bg-white shadow">
         <div>
-          <Image src="/media/3amk_full.png" alt="Logo" className="h-15" />
+          <Image src="/media/3amk_full.png" alt="Logo" width={100} height={75} />
         </div>
         <nav className="flex space-x-4">
           <Link href="/about" className="text-gray-700 hover:text-gray-900">
