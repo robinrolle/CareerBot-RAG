@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import React, { useState } from 'react';
 import FileUpload from './FileUpload';
+import { Tabs, Tab } from "@nextui-org/react";
+import './style/Tabs.css';
 
 export default function Home() {
   const [uploadedFilename, setUploadedFilename] = useState(null);
@@ -21,13 +23,11 @@ export default function Home() {
     setAnalyzed(false);
   };
 
-  // TODO erase mock and call backend
   const handleSubmit = async () => {
     if (!uploadedFilename) return;
 
     setLoading(true);
     try {
-      // Mock server response
       setTimeout(() => {
         const mockResponse = {
           skills: ['JavaScript', 'React', 'Node.js'],
@@ -43,7 +43,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen">
       <Head>
         {/* TODO add title and logo */}
       </Head>
@@ -54,11 +54,9 @@ export default function Home() {
         </div>
         <nav className="flex space-x-4">
           <Link href="/about" className="text-gray-700 hover:text-gray-900">
-            {/* TODO create page  */}
             About
           </Link>
           <Link href="/contact" className="text-gray-700 hover:text-gray-900">
-            {/* TODO create page  */}
             Contact
           </Link>
         </nav>
@@ -66,7 +64,7 @@ export default function Home() {
 
       <main className="container mx-auto px-4 py-16">
         <h1 className="text-5xl font-bold text-center mb-4">CareerBot</h1>
-        <p className="text-xl text-center mb-8">Analyze your resume and build your profile !</p>
+        <p className="text-xl text-center mb-8">Analyze your resume and build your profile!</p>
 
         <div className="flex flex-col items-center">
           <div className="w-full max-w-md">
@@ -85,9 +83,16 @@ export default function Home() {
         </div>
 
         {analyzed && (
-          <div className="mt-8">
-            {/* TODO catch back response and display data  */}
-            <h2 className="text-2xl font-semibold text-center">Future backend response</h2>
+          <div className="selectionContainer mt-16">
+            <h2 className="text-4xl font-semibold">Selection</h2>
+            <Tabs key="types" className="customTabs">
+              <Tab key="skills" title="Skills" className="customTab">
+                <div>skills container</div>
+              </Tab>
+              <Tab key="occupations" title="Occupations" className="customTab">
+                <div>occupations container</div>
+              </Tab>
+            </Tabs>
           </div>
         )}
       </main>

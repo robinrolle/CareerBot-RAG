@@ -1,0 +1,46 @@
+.selectionContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* Align items to the left */
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1000px;
+    /* Set a max-width to keep it slightly centered */
+}
+
+.customTabs {
+    display: flex;
+    padding-bottom: 1rem;
+    margin-top: 1rem;
+}
+
+.customTab {
+    padding: 0.5rem 1rem;
+    margin: 0 0.5rem 0 0;
+    /* Space between tabs */
+    background-color: #f9fafb;
+    /* Light background */
+    border-bottom: 2px solid #e5e7eb;
+    /* Light gray border */
+    border-radius: 9999px;
+    /* Fully rounded corners */
+    transition: background-color 0.3s ease;
+    color: #374151;
+    /* Dark gray text */
+    font-weight: 500;
+}
+
+.customTab:hover {
+    background-color: #e5e7eb;
+    /* Slightly darker on hover */
+    cursor: pointer;
+}
+
+.customTab[data-selected='true'] {
+    background-color: white;
+    color: #111827;
+    /* Darker text color when active */
+    border: 1px solid #3b82f6;
+    /* Blue border when active */
+}
