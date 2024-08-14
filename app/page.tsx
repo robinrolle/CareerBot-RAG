@@ -10,6 +10,7 @@ import SuggestionsSection from './components/SuggestionsSection';
 import SelectionsSection from './components/SelectionsSection';
 import './style/Tabs.css';
 
+
 export default function Home() {
   const [uploadedFilename, setUploadedFilename] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -137,7 +138,7 @@ export default function Home() {
         {/* TODO add title and logo */}
       </Head>
 
-      <header className="flex justify-between items-center p-4 bg-white shadow">
+      <header className="flex justify-between items-center p-4 bg-white">
         <div>
           <Image src="/media/3amk_full.png" alt="Logo" width={100} height={75} />
         </div>
@@ -151,18 +152,18 @@ export default function Home() {
         </nav>
       </header>
 
-      <main className="container mx-auto px-4 py-16">
+      <main className="container mx-auto px-16 py-16">
         <h1 className="text-5xl font-bold text-center mb-4">CareerBot</h1>
         <p className="text-xl text-center mb-8">Analyze your resume and build your profile!</p>
 
         <div className="flex flex-col items-center">
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-md mb-4">
             <FileUpload onFileUpload={handleFileUpload} onFileRemove={handleFileRemove} />
           </div>
 
           {uploadedFilename && (
             <button
-              className="w-full px-4 py-2 mt-4 text-white bg-blue-500 rounded shadow hover:bg-blue-600 max-w-md"
+              className="w-full p-4 text-white bg-blue-500 rounded-xl shadow hover:bg-blue-600 max-w-md"
               onClick={handleSubmit}
               disabled={loading || analyzed}
             >
@@ -172,7 +173,7 @@ export default function Home() {
         </div>
 
         {analyzed && (
-          <div className="mt-16 selectionContainer">
+          <div className="mx-auto flex flex-col items-start">
             <h2 className="text-4xl font-semibold">Your profile</h2>
             <Tabs key="types" className="customTabs" selectedKey={activeTab} onSelectionChange={handleTabChange}>
               <Tab key="skills" title="Skills" className="customTab" />

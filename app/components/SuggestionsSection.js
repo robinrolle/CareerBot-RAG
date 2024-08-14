@@ -29,7 +29,7 @@ const SuggestionsSection = ({ title, suggestions, options, onReset, onAdd, onRem
     };
 
     return (
-        <div className="suggestions-container bg-white shadow rounded-lg px-5 py-4 mb-4">
+        <div className="suggestions-container bg-white shadow-lg rounded-lg px-5 py-4">
             <Card className='px-1'>
                 <CardHeader className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold mt-4">{title}</h3>
