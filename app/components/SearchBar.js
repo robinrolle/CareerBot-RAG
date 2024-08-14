@@ -1,23 +1,33 @@
 // components/SearchBar.js
 
 import React from 'react';
-import Select, { components } from 'react-select';
+import TextField from '@mui/material/TextField';
+import Autocomplete from '@mui/material/Autocomplete';
+import { styled } from '@mui/material/styles';
 
-const MultiValue = ({ data }) => null;
-
-const DropdownIndicator = () => null;
+const CustomTextField = styled(TextField)({
+    '& .MuiOutlinedInput-root': {
+        borderRadius: '4px', // Ajuste cette valeur pour obtenir l'arrondi désiré
+    },
+});
 
 const SearchBar = ({ options, value, onChange, placeholder }) => {
     return (
-        <Select
+        <Autocomplete
+            multiple
             options={options}
-            isMulti
-            isClearable={false}
-            placeholder={placeholder}
-            onChange={onChange}
             value={value}
+            onChange={(event, newValue) => onChange(newValue)}
+            renderTags={() => null} // Pour masquer les Chips
+            renderInput={(params) => (
+                <CustomTextField
+                    {...params}
+                    variant="outlined"
+                    placeholder={placeholder}
+                />
+            )}
             className="mb-4 w-full"
-            components={{ MultiValue, DropdownIndicator }}
+            disableClearable // Pour désactiver la possibilité de tout effacer
         />
     );
 };

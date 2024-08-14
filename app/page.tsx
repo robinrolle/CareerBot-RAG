@@ -222,6 +222,7 @@ export default function Home() {
                   onClear={clearSelectedOccupations}
                   onRemove={removeOccupation}
                 />
+
               </div>
             )}
           </div>

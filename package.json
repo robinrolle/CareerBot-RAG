@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.13.0",
+    "@emotion/styled": "^11.13.0",
+    "@mui/material": "^5.16.7",
     "@nextui-org/react": "^2.4.6",
     "filepond": "^4.31.2",
     "filepond-plugin-file-validate-size": "^2.2.8",
