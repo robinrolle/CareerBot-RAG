@@ -154,7 +154,7 @@ export default function Home() {
 
       <main className="container mx-auto px-16 py-16">
         <h1 className="text-5xl font-bold text-center mb-4">CareerBot</h1>
-        <p className="text-xl text-center mb-8">Analyze your resume and build your profile!</p>
+        <p className="text-xl text-center mb-10">Analyze your resume and build your profile!</p>
 
         <div className="flex flex-col items-center">
           <div className="w-full max-w-md mb-4">
@@ -163,7 +163,7 @@ export default function Home() {
 
           {uploadedFilename && (
             <button
-              className={`w-full p-4 text-white rounded-xl shadow max-w-md mb-8
+              className={`w-full p-4 text-white rounded-xl shadow max-w-md 
                         ${loading || analyzed ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
               onClick={handleSubmit}
               disabled={loading || analyzed}
