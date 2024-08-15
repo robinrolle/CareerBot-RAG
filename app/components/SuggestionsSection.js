@@ -18,7 +18,10 @@ const SuggestionsSection = ({ title, suggestions, options, onReset, onAdd, onRem
                             key={option.value}
                             onClick={() => onAdd(option.value)}
                             onClose={() => onRemove(option, false)} // Ensure the delete button works
-                            className="flex items-center px-3 py-1 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 cursor-pointer"
+                            classNames={{
+                                base: "flex items-center px-3 py-1 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 cursor-pointer",
+                                closeButton: "ml-2 text-xl",
+                            }}
                         >
                             {option.label}
                         </Chip>
