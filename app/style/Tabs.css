@@ -13,8 +13,6 @@
     border-bottom: 2px solid #e5e7eb;
     /* Light gray border */
     border-radius: 9999px;
-    /* Fully rounded corners */
-    transition: background-color 0.3s ease;
     color: #374151;
     /* Dark gray text */
     font-weight: 500;

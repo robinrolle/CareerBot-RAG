@@ -175,7 +175,7 @@ export default function Home() {
         {analyzed && (
           <div className="mx-auto flex flex-col items-start">
             <h2 className="text-4xl font-semibold">Your profile</h2>
-            <Tabs key="types" className="customTabs" selectedKey={activeTab} onSelectionChange={handleTabChange}>
+            <Tabs key="types" className="customTabs" selectedKey={activeTab} onSelectionChange={handleTabChange} disableAnimation={true}>
               <Tab key="skills" title="Skills" className="customTab" />
               <Tab key="occupations" title="Occupations" className="customTab" />
             </Tabs>
