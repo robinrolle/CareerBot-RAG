@@ -163,7 +163,7 @@ export default function Home() {
 
           {uploadedFilename && (
             <button
-              className="w-full p-4 text-white bg-blue-500 rounded-xl shadow hover:bg-blue-600 max-w-md"
+              className="w-full p-4 text-white bg-blue-500 rounded-xl shadow hover:bg-blue-600 max-w-md mb-8"
               onClick={handleSubmit}
               disabled={loading || analyzed}
             >
