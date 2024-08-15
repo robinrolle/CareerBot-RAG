@@ -17,8 +17,8 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
                         key={option.value}
                         onClose={() => onRemove(option, true)}
                         classNames={{
-                            base: "flex items-center px-3 py-1 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 cursor-pointer",
-                            closeButton: "ml-2 text-xl",
+                            base: "flex items-center px-3 py-1 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-full shadow cursor-pointer",
+                            closeButton: "ml-2 text-xl bg-white rounded-full p-1 hover:bg-red-500 transition duration-300 transform hover:scale-110",
                         }}
                     >
                         {option.label}
