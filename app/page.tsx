@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import React, { useState } from 'react';
 import FileUpload from './components/FileUpload';
-import { Tabs, Tab, Button } from "@nextui-org/react";
+import { Tabs, Tab } from "@nextui-org/react";
 import SuggestionsSection from './components/SuggestionsSection';
 import SelectionsSection from './components/SelectionsSection';
 import './style/Tabs.css';
@@ -162,15 +162,28 @@ export default function Home() {
           </div>
 
           {uploadedFilename && (
-            <Button
-              className="w-full p-4 text-white bg-blue-500 rounded-xl shadow hover:bg-blue-600 max-w-md mb-8"
+            <button
+              className={`w-full p-4 text-white rounded-xl shadow max-w-md mb-8
+                        ${loading || analyzed ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
               onClick={handleSubmit}
               disabled={loading || analyzed}
             >
-              {loading ? 'Analyzing...' : 'Analyze'}
-            </Button>
+              {loading ? (
+                <>
+                  Analyzing...
+                </>
+              ) : (
+                'Analyze'
+              )}
+            </button>
           )}
         </div>
+
+        {loading && !analyzed && (
+          <div className="flex justify-center items-center h-64">
+            <div className="border-gray-300 h-20 w-20 animate-spin rounded-full border-8 border-t-blue-600"></div>
+          </div>
+        )}
 
         {analyzed && (
           <div className="mx-auto flex flex-col items-start">
