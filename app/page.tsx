@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import React, { useState } from 'react';
 import FileUpload from './components/FileUpload';
-import { Tabs, Tab } from "@nextui-org/react";
+import { Tabs, Tab, Button } from "@nextui-org/react";
 import SuggestionsSection from './components/SuggestionsSection';
 import SelectionsSection from './components/SelectionsSection';
 import './style/Tabs.css';
@@ -162,13 +162,13 @@ export default function Home() {
           </div>
 
           {uploadedFilename && (
-            <button
+            <Button
               className="w-full p-4 text-white bg-blue-500 rounded-xl shadow hover:bg-blue-600 max-w-md mb-8"
               onClick={handleSubmit}
               disabled={loading || analyzed}
             >
               {loading ? 'Analyzing...' : 'Analyze'}
-            </button>
+            </Button>
           )}
         </div>
 

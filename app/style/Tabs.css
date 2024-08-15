@@ -8,14 +8,13 @@
     padding: 0.5rem 1rem;
     margin: 0 0.5rem 0 0;
     /* Space between tabs */
-    background-color: #f9fafb;
+    background-color: white;
     /* Light background */
-    border-bottom: 2px solid #e5e7eb;
-    /* Light gray border */
-    border-radius: 9999px;
     color: #374151;
     /* Dark gray text */
     font-weight: 500;
+    border-bottom: 2px solid transparent;
+    /* Initial transparent border */
 }
 
 .customTab:hover {
@@ -26,8 +25,9 @@
 
 .customTab[data-selected='true'] {
     background-color: white;
-    color: #111827;
-    /* Darker text color when active */
-    border: 1px solid #3b82f6;
-    /* Blue border when active */
+    color: #3b82f6;
+    /* Blue */
+    font-weight: bold;
+    border-bottom: 2px solid #3b82f6;
+    /* Blue border underneath */
 }
