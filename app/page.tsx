@@ -3,40 +3,58 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FileUpload from './components/FileUpload';
 import { Tabs, Tab } from "@nextui-org/react";
 import SuggestionsSection from './components/SuggestionsSection';
 import SelectionsSection from './components/SelectionsSection';
 import './style/Tabs.css';
 
-
 export default function Home() {
   const [uploadedFilename, setUploadedFilename] = useState(null);
   const [loading, setLoading] = useState(false);
   const [analyzed, setAnalyzed] = useState(false);
 
-  const [skillsOptions] = useState([
-    { value: 'skill-1', label: 'Skill 1' },
-    { value: 'skill-2', label: 'Skill 2' },
-    { value: 'skill-3', label: 'Skill 3' },
-    { value: 'skill-4', label: 'Skill 4' },
-  ]);
+  const [skillsOptions, setSkillsOptions] = useState([]);
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [suggestedSkills, setSuggestedSkills] = useState([]);
   const [responseSkills, setResponseSkills] = useState([]);
 
-  const [occupationsOptions] = useState([
-    { value: 'occupation-1', label: 'Occupation 1' },
-    { value: 'occupation-2', label: 'Occupation 2' },
-    { value: 'occupation-3', label: 'Occupation 3' },
-    { value: 'occupation-4', label: 'Occupation 4' },
-  ]);
+  const [occupationsOptions, setOccupationsOptions] = useState([]);
   const [selectedOccupations, setSelectedOccupations] = useState([]);
   const [suggestedOccupations, setSuggestedOccupations] = useState([]);
   const [responseOccupations, setResponseOccupations] = useState([]);
 
   const [activeTab, setActiveTab] = useState('skills');
+
+  // load options
+  useEffect(() => {
+    const loadSkillsOptions = async () => {
+      try {
+        const response = await fetch('/data/skills.json');  
+        const data = await response.json();
+        setSkillsOptions(data);
+        console.log('Skills options:', data); 
+      } catch (error) {
+        console.error("Error at loading skills options :", error);
+      }
+    };
+
+    const loadOccupationsOptions = async () => {
+      try {
+        const response = await fetch('/data/occupations.json');
+        const data = await response.json();
+        setOccupationsOptions(data);
+        console.log('Occupations options:', data); 
+      } catch (error) {
+        console.error("Error at loading occupations options :", error);
+      }
+    };
+
+    loadSkillsOptions();
+    loadOccupationsOptions();
+  }, []);
+
 
   const handleFileUpload = (filename) => {
     setUploadedFilename(filename);
