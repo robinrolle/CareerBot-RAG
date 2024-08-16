@@ -70,24 +70,30 @@ export default function Home() {
     if (!uploadedFilename) return;
 
     setLoading(true);
+
     try {
-      setTimeout(() => {
-        const mockResponse = {
-          suggestedSkills: ['skill-1', 'skill-2'],
-          suggestedOccupations: ['occupation-1', 'occupation-2']
-        };
-        setResponseSkills(mockResponse.suggestedSkills);
-        setSuggestedSkills(mockResponse.suggestedSkills);
-        setResponseOccupations(mockResponse.suggestedOccupations);
-        setSuggestedOccupations(mockResponse.suggestedOccupations);
+        const response = await fetch(`http://localhost:8000/process?filename=${uploadedFilename}`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to process the file');
+        }
+
+        const data = await response.json();
+
+        setResponseSkills(data.skills || []);
+        setSuggestedSkills(data.skills || []);
+        setResponseOccupations(data.occupations || []);
+        setSuggestedOccupations(data.occupations || []);
+
         setAnalyzed(true);
-        setLoading(false);
-      }, 2000);
     } catch (error) {
-      console.error('Error:', error);
-      setLoading(false);
+        console.error('Error during processing:', error);
+    } finally {
+        setLoading(false);
     }
-  };
+};
 
   const handleTabChange = (tabKey) => {
     setActiveTab(tabKey);
