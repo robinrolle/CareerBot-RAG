@@ -1,5 +1,7 @@
 chromadb==0.5.5
 pandas==2.2.2
 tqdm==4.66.5
-sentence_transformers==3.0.1
 openai==1.40.3
+langchain-openai~=0.1.21
+numpy~=1.26.4
+langchain~=0.2.14
