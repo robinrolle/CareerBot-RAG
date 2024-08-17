@@ -1,5 +1,7 @@
 import os
 import re
+import numpy as np
+import pandas as pd
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
@@ -16,7 +18,7 @@ DATABASE_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'data','proces
 
 # Models config
 EMBEDDING_MODEL_NAME = "text-embedding-3-small"
-GENERATION_MODEL_NAME = "gpt-4o"
+GENERATION_MODEL_NAME = "gpt-4o-mini"
 
 # Configuration Constants
 VECTORSTORE_MAX_RETRIEVED = 25 # Max number of documents to retrieve from vectorstore. Don't go over context window
@@ -24,7 +26,7 @@ VECTORSTORE_MAX_SUGGESTED = [20, 10] # for [skills, occupations] how many potent
 LLM_MAX_PICKS = [15, 5] # for [skills, occupations] how many items LLM must pick from retrieved options
 
 # Set the OpenAI API key
-os.environ['OPENAI_API_KEY'] = "YOUR_API_KEY"
+os.environ['OPENAI_API_KEY'] = "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"
 
 def generate_valid_collection_name(model_name):
     collection_name = re.sub(r'[^a-zA-Z0-9_-]', '_', model_name)
@@ -90,6 +92,32 @@ def initialize_chain():
 
     return chain
 
+def create_item_relevance_mapping(answer):
+    # Verify and adjust the response format
+    assert ('items' in answer) and ('relevances' in answer), 'Response not in correct format!'
+
+    # Adjust the length of relevances to match the number of items
+    di = len(answer['relevances']) - len(answer['items'])
+    if di > 0:
+        answer['relevances'] = answer['relevances'][0:len(answer['items'])]
+    elif di < 0:
+        answer['relevances'] = answer['relevances'] + ['LOW'] * (-di)
+
+    # Remove duplicates
+    df_items = pd.DataFrame(answer['items'], columns=['item'])
+    idx = df_items[df_items.duplicated(keep=False)].index.tolist()
+
+    answer['relevances'] = [x.strip() for k, x in enumerate(answer['relevances']) if k not in idx]
+    answer['items'] = [x.strip() for k, x in enumerate(answer['items']) if k not in idx]
+
+    # Define the relevance mapping
+    relevance_mapping = {'HIGH': 3, 'MEDIUM': 2, 'LOW': 1}
+
+    # Create a mapping of items to their numerical relevances
+    item_relevance_map = {answer['items'][i]: relevance_mapping[answer['relevances'][i]] for i in range(len(answer['items']))}
+
+    return item_relevance_map
+
 if __name__ == "__main__":
     embedding_ef = OpenAIEmbeddings(model=EMBEDDING_MODEL_NAME)
 
@@ -115,11 +143,24 @@ if __name__ == "__main__":
     chain = initialize_chain()
 
     # Generate the final response
-    response = chain.invoke({
+    skills_response = chain.invoke({
         "question": input_text,
         "context": context_skills,
         "LLM_MAX_PICKS": LLM_MAX_PICKS[0],
     })
 
+    # Generate the final response
+    occupations_response = chain.invoke({
+        "question": input_text,
+        "context": context_occupations,
+        "LLM_MAX_PICKS": LLM_MAX_PICKS[1],
+    })
+
     print("Generated Response:")
-    print(response)
+    print(f"occupation {occupations_response}")
+    print(f"skills {skills_response}")
+
+    response_processed_skills = create_item_relevance_mapping(skills_response)
+    response_processed_occupation = create_item_relevance_mapping(occupations_response)
+    print(f"skills mapping : {create_item_relevance_mapping(skills_response)}")
+    print(f"occupations mapping : {create_item_relevance_mapping(occupations_response)}")
