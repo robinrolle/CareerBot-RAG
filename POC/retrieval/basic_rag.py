@@ -93,48 +93,38 @@ def initialize_chain():
 
     return chain
 
-def create_item_relevance_mapping(answer):
-    # Verify and adjust the response format
+def map_and_structure_terms(retrieved_docs, answer, doc_type):
+    # Check response format
     assert ('items' in answer) and ('relevances' in answer), 'Response not in correct format!'
 
-    # Adjust the length of relevances to match the number of items
+    # Adjust relevance length to meet item length
     di = len(answer['relevances']) - len(answer['items'])
     if di > 0:
-        answer['relevances'] = answer['relevances'][0:len(answer['items'])]
+        answer['relevances'] = answer['relevances'][:len(answer['items'])]
     elif di < 0:
         answer['relevances'] = answer['relevances'] + ['LOW'] * (-di)
 
-    # Remove duplicates
+    # Delete doubles
     df_items = pd.DataFrame(answer['items'], columns=['item'])
     idx = df_items[df_items.duplicated(keep=False)].index.tolist()
 
     answer['relevances'] = [x.strip() for k, x in enumerate(answer['relevances']) if k not in idx]
     answer['items'] = [x.strip() for k, x in enumerate(answer['items']) if k not in idx]
 
-    # Define the relevance mapping
+    # Map item with relevance
     relevance_mapping = {'HIGH': 3, 'MEDIUM': 2, 'LOW': 1}
-
-    # Create a mapping of items to their numerical relevances
     item_relevance_map = {answer['items'][i]: relevance_mapping[answer['relevances'][i]] for i in range(len(answer['items']))}
 
-    return item_relevance_map
-
-def structure_terms(retrieved_docs, response_processed, doc_type):
+    # Structure docs
     structured_docs = []
-
     for i, doc in enumerate(retrieved_docs['documents'][0]):
-        for term in response_processed.keys():
+        for term in item_relevance_map.keys():
             labels = doc.split('|')[0]
             if term in labels:
-                relevance = response_processed[term]
-                if isinstance(relevance, str):
-                    relevance_mapping = {'HIGH': 3, 'MEDIUM': 2, 'LOW': 1}
-                    relevance = relevance_mapping[relevance]
-
                 structured_docs.append({
                     'embedding': retrieved_docs['embeddings'][0][i],
                     'document': doc,
-                    'relevance': relevance,
+                    'relevance': item_relevance_map[term],
                     'type': doc_type,
                     'label': labels.strip()
                 })
@@ -238,16 +228,10 @@ if __name__ == "__main__":
     print(f"Skills: {skills_response}")
     print(f"Occupations: {occupations_response}")
 
-    response_processed_skills = create_item_relevance_mapping(skills_response)
-    response_processed_occupation = create_item_relevance_mapping(occupations_response)
-
-    print(f"Skills mapping: {response_processed_skills}")
-    print(f"Occupations mapping: {response_processed_occupation}")
-
-    # Structure docs
-    structured_skills = structure_terms(retrieved_skills, response_processed_skills, 'skill/competence')
+    # Map and structure the terms for skills and occupations
+    structured_skills = map_and_structure_terms(retrieved_skills, skills_response, 'skill/competence')
     print("Structured Skills:", structured_skills)
-    structured_occupations = structure_terms(retrieved_occupations, response_processed_occupation, 'occupation')
+    structured_occupations = map_and_structure_terms(retrieved_occupations, occupations_response, 'occupation')
     print("Structured Occupations:", structured_occupations)
 
     # Similarity search for suggestions
