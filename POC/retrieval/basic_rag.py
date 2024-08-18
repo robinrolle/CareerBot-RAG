@@ -51,14 +51,15 @@ def init_chroma_db(db_collection_name, embedding_function):
         raise
     return db
 
-def get_retriever(db, max_retrieved, doc_type):
-    return db.as_retriever(
-        search_type="similarity",
-        search_kwargs={
-            "k": max_retrieved,
-            "filter": {"type": doc_type}
-        }
+def query_documents(db, input_embedding, doc_type, max_retrieved):
+
+    retrieved_docs = db._collection.query(
+        query_embeddings=input_embedding,
+        n_results=max_retrieved,
+        include=['embeddings', 'documents', 'metadatas'],
+        where={"type": doc_type}
     )
+    return retrieved_docs
 
 def format_skills_for_prompt(skills_docs):
     formatted_skills = []
@@ -175,7 +176,6 @@ def get_similar_documents(db, docs, doc_type, n_suggest):
 
     return final_docs
 
-
 if __name__ == "__main__":
     # Init embedding functiion
     embedding_ef = OpenAIEmbeddings(model=EMBEDDING_MODEL_NAME)
@@ -193,8 +193,8 @@ if __name__ == "__main__":
     input_embedding = embedding_ef.embed_query(text=input_text)
 
     # Retrieve documents by querying the collection
-    retrieved_skills = db._collection.query(query_embeddings=input_embedding, n_results=VECTORSTORE_MAX_RETRIEVED,include=['embeddings','documents'],where={"type": "skill/competence"})
-    retrieved_occupations = db._collection.query(query_embeddings=input_embedding, n_results=VECTORSTORE_MAX_RETRIEVED, include=['embeddings', 'documents'], where={"type": "occupation"})
+    retrieved_skills = query_documents(db, input_embedding, 'skill/competence', VECTORSTORE_MAX_RETRIEVED)
+    retrieved_occupations = query_documents(db, input_embedding, 'occupation', VECTORSTORE_MAX_RETRIEVED)
 
     # Output the embeddings
     print("Skills Embeddings:", retrieved_skills['documents'][0])
