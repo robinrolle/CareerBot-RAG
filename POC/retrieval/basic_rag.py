@@ -2,7 +2,6 @@ import os
 import re
 import numpy as np
 import pandas as pd
-
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
@@ -10,8 +9,18 @@ from langchain_chroma import Chroma
 from langchain_core.runnables import Runnable, RunnableSequence
 from langchain_core.output_parsers import JsonOutputParser
 import chromadb
+from POC.retrieval.prompts import templates
+from langsmith import traceable
+from langsmith import Client
 
-from POC.retrieval.prompts.templates import MY_PROMPT_TEMPLATE
+# Set the OpenAI API key
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_PROJECT"] = "CareerBot"
+os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+os.environ['LANGSMITH_API_KEY'] = "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"
+
+# Initialize LangSmith
+langsmith = Client()
 
 # Define the relative path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -23,12 +32,13 @@ GENERATION_MODEL_NAME = "gpt-4o-mini"
 
 # Configuration Constants
 VECTORSTORE_MAX_RETRIEVED = 25 # Max number of documents to retrieve from vectorstore. Don't go over context window
-VECTORSTORE_MAX_SUGGESTED = [20, 10] # for [skills, occupations] how many potential items to suggest from vectorstore
+VECTORSTORE_MAX_SUGGESTED = [20, 10] # for [skills, occupations] how many potential items to suggest+ from vectorstore
 LLM_MAX_PICKS = [15, 5] # for [skills, occupations] how many items LLM must pick from retrieved options
 
 # Set the OpenAI API key
 os.environ['OPENAI_API_KEY'] = "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"
 
+@traceable
 def generate_valid_collection_name(model_name):
     collection_name = re.sub(r'[^a-zA-Z0-9_-]', '_', model_name)
     if len(collection_name) < 3:
@@ -41,6 +51,7 @@ def generate_valid_collection_name(model_name):
         collection_name = collection_name[:-1] + 'Z'
     return collection_name
 
+@traceable
 def init_chroma_db(db_collection_name, embedding_function):
     chroma_client = chromadb.PersistentClient(path=str(DATABASE_DIR))
     try:
@@ -51,8 +62,8 @@ def init_chroma_db(db_collection_name, embedding_function):
         raise
     return db
 
+@traceable
 def query_documents(db, input_embedding, doc_type, max_retrieved):
-
     retrieved_docs = db._collection.query(
         query_embeddings=input_embedding,
         n_results=max_retrieved,
@@ -61,6 +72,7 @@ def query_documents(db, input_embedding, doc_type, max_retrieved):
     )
     return retrieved_docs
 
+@traceable
 def format_skills_for_prompt(skills_docs):
     formatted_skills = []
     for doc in skills_docs:
@@ -68,6 +80,7 @@ def format_skills_for_prompt(skills_docs):
         formatted_skills.append(item_description)
     return "\n".join(formatted_skills)
 
+@traceable
 def format_occupations_for_prompt(occupation_docs):
     formatted_occupations = []
     for doc in occupation_docs:
@@ -75,9 +88,10 @@ def format_occupations_for_prompt(occupation_docs):
         formatted_occupations.append(item_description)
     return "\n".join(formatted_occupations)
 
+@traceable
 def initialize_chain():
     # Create the prompt template using ChatPromptTemplate
-    prompt = ChatPromptTemplate.from_template(MY_PROMPT_TEMPLATE)
+    prompt = ChatPromptTemplate.from_template(templates.MY_PROMPT_TEMPLATE)
 
     # Initialize the language model
     model = ChatOpenAI(model=GENERATION_MODEL_NAME, temperature=0)
@@ -94,6 +108,7 @@ def initialize_chain():
 
     return chain
 
+@traceable
 def map_and_structure_terms(retrieved_docs, answer, doc_type):
     # Check response format
     assert ('items' in answer) and ('relevances' in answer), 'Response not in correct format!'
@@ -133,6 +148,14 @@ def map_and_structure_terms(retrieved_docs, answer, doc_type):
 
     return structured_docs
 
+@traceable
+def clean_and_prepare_context(retrieved_docs):
+    context = [x.replace('\n', ' ').replace('\r', '') for x in retrieved_docs['documents'][0]]
+    context = [x for x in context if len(x) > 4]  # Only include documents with more than 4 characters
+    context = '\n\n'.join(context)
+    return context
+
+@traceable
 def get_similar_documents(db, docs, doc_type, n_suggest):
     # Memorise already selected docs
     used_docs = set([x['document'] for x in docs])
@@ -153,7 +176,7 @@ def get_similar_documents(db, docs, doc_type, n_suggest):
         new_docs.append(cands)
         used_docs.update([x['document'] for x in cands])
 
-    # Sélectionner les suggestions finales
+    # Select final docs
     round = -1
     final_docs = []
 
@@ -176,7 +199,8 @@ def get_similar_documents(db, docs, doc_type, n_suggest):
 
     return final_docs
 
-if __name__ == "__main__":
+@traceable(name=f"Trace: {GENERATION_MODEL_NAME} + {EMBEDDING_MODEL_NAME}")
+def main():
     # Init embedding functiion
     embedding_ef = OpenAIEmbeddings(model=EMBEDDING_MODEL_NAME)
 
@@ -184,29 +208,23 @@ if __name__ == "__main__":
     chroma_client = chromadb.PersistentClient(path=str(DATABASE_DIR))
     db = Chroma(client=chroma_client, collection_name=collection_name, embedding_function=embedding_ef)
 
+    #Exemple user input
     input_text = """
     I have worked last 5 years as a contractor that sells and installs heat pumps for consumers. 
     I have an engineering degree and know lots of refrigerants, and technology of heating and cooling systems. 
     I have a license to do electrical jobs."""
 
-    # Turn query into embedding
+    # Turn input into embedding
     input_embedding = embedding_ef.embed_query(text=input_text)
 
-    # Retrieve documents by querying the collection
+    # Retrieve documents by querying the DB
     retrieved_skills = query_documents(db, input_embedding, 'skill/competence', VECTORSTORE_MAX_RETRIEVED)
     retrieved_occupations = query_documents(db, input_embedding, 'occupation', VECTORSTORE_MAX_RETRIEVED)
 
-    # Output the embeddings
-    print("Skills Embeddings:", retrieved_skills['documents'][0])
-    print("Occupation Embeddings:", retrieved_occupations['documents'][0])
 
     # Clean and prepare the contexts for the prompt
-    context_skills = [x.replace('\n', ' ').replace('\r', '') for x in retrieved_skills['documents'][0]]
-    context_skills = [x for x in context_skills if len(x) > 4]  # Only include documents with more than 4 characters
-    context_skills = '\n\n'.join(context_skills)
-    context_occupations = [x.replace('\n', ' ').replace('\r', '') for x in retrieved_occupations['documents'][0]]
-    context_occupations = [x for x in context_occupations if len(x) > 4]  # Only include documents with more than 4 characters
-    context_occupations = '\n\n'.join(context_occupations)
+    context_skills = clean_and_prepare_context(retrieved_skills)
+    context_occupations = clean_and_prepare_context(retrieved_occupations)
 
     chain = initialize_chain()
 
@@ -224,27 +242,15 @@ if __name__ == "__main__":
         "LLM_MAX_PICKS": LLM_MAX_PICKS[1],
     })
 
-    print("Generated Response:")
-    print(f"Skills: {skills_response}")
-    print(f"Occupations: {occupations_response}")
 
     # Map and structure the terms for skills and occupations
     structured_skills = map_and_structure_terms(retrieved_skills, skills_response, 'skill/competence')
-    print("Structured Skills:", structured_skills)
     structured_occupations = map_and_structure_terms(retrieved_occupations, occupations_response, 'occupation')
-    print("Structured Occupations:", structured_occupations)
 
-    # Similarity search for suggestions
     similar_skills = get_similar_documents(db, structured_skills, 'skill/competence', VECTORSTORE_MAX_SUGGESTED[0])
+
     similar_occupations = get_similar_documents(db, structured_occupations, 'occupation', VECTORSTORE_MAX_SUGGESTED[1])
 
 
-    # Parse and display only the labels
-    print("Labels for Similar Skills Suggestions:")
-    for doc in similar_skills:
-        print(doc['label'])
-
-    print("Labels for Similar Occupations Suggestions:")
-    for doc in similar_occupations:
-        print(doc['label'])
-
+if __name__ == "__main__":
+    main()
