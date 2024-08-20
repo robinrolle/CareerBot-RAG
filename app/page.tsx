@@ -31,7 +31,7 @@ export default function Home() {
   useEffect(() => {
     const loadSkillsOptions = async () => {
       try {
-        const response = await fetch('/data/skills.json');  
+        const response = await fetch('/data/skills_options.json');  
         const data = await response.json();
         setSkillsOptions(data);
         console.log('Skills options:', data); 
@@ -42,7 +42,7 @@ export default function Home() {
 
     const loadOccupationsOptions = async () => {
       try {
-        const response = await fetch('/data/occupations.json');
+        const response = await fetch('/data/occupations_options.json');
         const data = await response.json();
         setOccupationsOptions(data);
         console.log('Occupations options:', data); 
@@ -82,10 +82,10 @@ export default function Home() {
 
         const data = await response.json();
 
-        setResponseSkills(data.skills || []);
-        setSuggestedSkills(data.skills || []);
-        setResponseOccupations(data.occupations || []);
-        setSuggestedOccupations(data.occupations || []);
+        setResponseSkills(data.skills_ids || []);
+        setSuggestedSkills(data.skills_ids || []);
+        setResponseOccupations(data.occupations_ids || []);
+        setSuggestedOccupations(data.occupations_ids || []);
 
         setAnalyzed(true);
     } catch (error) {
