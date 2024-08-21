@@ -1,10 +1,7 @@
-// components/SearchBar.js
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 import { styled } from '@mui/material/styles';
-import debounce from 'lodash.debounce';
 
 const CustomTextField = styled(TextField)({
     '& .MuiOutlinedInput-root': {
@@ -13,32 +10,24 @@ const CustomTextField = styled(TextField)({
 });
 
 const SearchBar = ({ options, value, onChange, placeholder }) => {
-    const [inputValue, setInputValue] = useState(value);
+    const [inputValue, setInputValue] = useState('');
 
-    const debouncedOnChange = useCallback(
-        debounce((newValue) => {
-            onChange(newValue);
-        }, 300), // Adjust the debounce delay (in milliseconds) as needed
-        []
-    );
-
-    useEffect(() => {
-        debouncedOnChange(inputValue);
-        // Cleanup function to cancel any pending debounced calls when the component unmounts
-        return () => {
-            debouncedOnChange.cancel();
-        };
-    }, [inputValue, debouncedOnChange]);
+    const handleSelect = (event, newValue) => {
+        if (newValue) {
+            onChange([...value, newValue.value]);
+            setInputValue('');  // Vider l'input après la sélection
+        }
+    };
 
     return (
         <Autocomplete
-            multiple
-            options={options}
-            value={value}
-            onChange={(event, newValue) => {
-                setInputValue(newValue);
+            options={options.filter(option => !value.includes(option.value))}
+            getOptionLabel={(option) => option.label}
+            onChange={handleSelect}
+            inputValue={inputValue}
+            onInputChange={(event, newInputValue) => {
+                setInputValue(newInputValue);
             }}
-            renderTags={() => null} // Pour masquer les Chips
             renderInput={(params) => (
                 <CustomTextField
                     {...params}
@@ -47,7 +36,8 @@ const SearchBar = ({ options, value, onChange, placeholder }) => {
                 />
             )}
             className="mb-4 w-full"
-            disableClearable // Pour désactiver la possibilité de tout effacer
+            disableClearable
+            value={null} // Ajoutez ceci pour réinitialiser la sélection après le choix
         />
     );
 };
