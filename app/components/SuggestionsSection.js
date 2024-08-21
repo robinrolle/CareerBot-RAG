@@ -1,9 +1,7 @@
-'use client';
-
 import React from 'react';
-import { Card, CardHeader, CardBody, Button, Chip } from "@nextui-org/react";
+import { Card, CardHeader, CardBody, Chip } from "@nextui-org/react";
 
-const SuggestionsSection = ({ title, suggestions, options, onReset, onAdd, onRemove }) => {
+const SuggestionsSection = ({ suggestions, options, onSelect }) => {
     const renderTags = () => {
         if (suggestions.length === 0) {
             return <div className="text-gray-500 mb-4">No suggestions</div>;
@@ -16,11 +14,9 @@ const SuggestionsSection = ({ title, suggestions, options, onReset, onAdd, onRem
                     return option ? (
                         <Chip
                             key={option.value}
-                            onClick={() => onAdd(option.value)}
-                            onClose={() => onRemove(option, false)} // Ensure the delete button works
+                            onClick={() => onSelect(option)}
                             classNames={{
-                                base: "flex items-center px-3 py-1 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-full shadow transition  duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 cursor-pointer",
-                                closeButton: "ml-2 text-xl bg-white rounded-full p-1 hover:bg-red-500 transition duration-300 transform hover:scale-110",
+                                base: "flex items-center px-3 py-1 text-m font-medium text-gray-800 bg-white border border-gray-300 rounded-full shadow cursor-pointer transition hover:bg-green-500  duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105",
                             }}
                         >
                             {option.label}
@@ -35,19 +31,15 @@ const SuggestionsSection = ({ title, suggestions, options, onReset, onAdd, onRem
         <div className="suggestions-container bg-white shadow-lg rounded-lg px-5 py-4">
             <Card className='px-1'>
                 <CardHeader className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold mt-4">{title}</h3>
-                    <button
-                        className="p-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-md shadow  hover:bg-red-500 transition duration-300 transform hover:scale-110"
-                        onClick={onReset}
-                    >
-                        Reset
-                    </button>
+                    <h3 className="text-lg font-semibold mt-4">Suggestions</h3>
                 </CardHeader>
                 <CardBody className="mt-4">
-                    {renderTags()}
+                    <div className="selections-container">
+                        <div>{renderTags()}</div>
+                    </div>
                 </CardBody>
             </Card>
-        </div >
+        </div>
     );
 };
 
