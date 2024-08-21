@@ -6,5 +6,7 @@ class UploadResponse(BaseModel):
     path: str
 
 class ProcessResponse(BaseModel):
-    skills_ids: List[str]
-    occupations_ids: List[str]
+    selected_skills_ids: List[str]
+    selected_occupations_ids: List[str]
+    suggested_skills_ids : List[str]
+    suggested_occupations_ids : List[str]

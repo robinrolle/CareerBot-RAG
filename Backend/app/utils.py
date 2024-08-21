@@ -1,3 +1,4 @@
+
 from .models import ProcessResponse
 from langchain_community.document_loaders import PyMuPDFLoader
 import logging
@@ -5,6 +6,8 @@ from typing import List, Tuple
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_groq import ChatGroq
 from .templates import full_prompt
+import numpy as np
+from sklearn.cluster import KMeans
 
 
 GROQ_API_KEY = "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"
@@ -12,30 +15,27 @@ GROQ_API_KEY = "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"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def similarity_search(query_text: str, collection, model, top_k: int, filter_type: str = None) -> List[str]:
+def similarity_search(query_text: str, collection, model, top_k: int, filter_type: str = None):
     try:
         query_embedding = model.encode(query_text).tolist()
         results = collection.query(
             query_embeddings=[query_embedding],
             n_results=top_k,
-            where={'type': filter_type}
+            where={'type': filter_type},
+            include=['embeddings', 'documents', 'metadatas']
         )
 
-        # Extract doc & ID
-        documents = results['documents'][0] if 'documents' in results else []
-        ids = results['ids'][0] if 'ids' in results else []
-
-        # Return tuples list
-        return list(zip(documents, ids))
+        # Return results
+        return results
 
     except Exception as e:
         logger.error(f"Failed to perform similarity search: {e}")
         return []
 
-def similarity_search_skills(query_text: str, collection, model, top_k: int) -> List[str]:
+def similarity_search_skills(query_text: str, collection, model, top_k: int):
     return similarity_search(query_text, collection, model, top_k, filter_type='skill/competence')
 
-def similarity_search_occupations(query_text: str, collection, model, top_k: int) -> List[str]:
+def similarity_search_occupations(query_text: str, collection, model, top_k: int):
     return similarity_search(query_text, collection, model, top_k, filter_type='occupation')
 
 def extract_pdf(file_path: str) -> str:
@@ -63,6 +63,41 @@ def summarize_pdf(extracted_text: str) -> List[dict]:
 
     return summaries
 
+def get_similar_documents(collection, retrieved_docs, doc_type, n_suggest):
+    # Extraire les embeddings des documents récupérés
+    embeddings = np.array(retrieved_docs['embeddings'][0])
+
+    # Déterminer le nombre de clusters pour KMeans
+    n_clusters = max(1, len(embeddings) // 5)
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+
+    # Regrouper les embeddings par clusters
+    clusters = kmeans.fit_predict(embeddings)
+
+    all_suggested_docs = {
+        'documents': [],
+        'embeddings': [],
+        'metadatas': [],
+        'ids': []
+    }
+
+    # Pour chaque cluster, rechercher des documents similaires
+    for cluster in range(n_clusters):
+        cluster_embeddings = embeddings[clusters == cluster]
+        suggested_docs = collection.query(
+            query_embeddings=cluster_embeddings.tolist(),
+            n_results=n_suggest,
+            include=['embeddings', 'documents', 'metadatas'],
+            where={"type": doc_type}
+        )
+
+        # Ajouter les résultats à l'ensemble global
+        all_suggested_docs['documents'].extend(suggested_docs['documents'])
+        all_suggested_docs['embeddings'].extend(suggested_docs['embeddings'])
+        all_suggested_docs['metadatas'].extend(suggested_docs['metadatas'])
+        all_suggested_docs['ids'].extend(suggested_docs['ids'])
+
+    return all_suggested_docs
 
 async def process_cv(file_path: str, collection, model) -> ProcessResponse:
     extracted_text = extract_pdf(file_path)
@@ -70,7 +105,9 @@ async def process_cv(file_path: str, collection, model) -> ProcessResponse:
     print(f"summaries : {summaries}")
 
     unique_skills = set()
+    unique_similar_skills = set()
     unique_occupations = set()
+    unique_similar_occupations = set()
 
     for summary in summaries:
         items = summary['summary']
@@ -82,18 +119,26 @@ async def process_cv(file_path: str, collection, model) -> ProcessResponse:
         retrieved_skills = similarity_search_skills(query, collection, model, top_k=2)
         retrieved_occupations = similarity_search_occupations(query, collection, model, top_k=1)
 
-        print(f"retrieved_skills {retrieved_skills}")
-        print(f"retrieved_occupation {retrieved_occupations}")
+        similar_skills = get_similar_documents(collection, retrieved_skills, 'skill/competence', 5)
+        similar_occupations = get_similar_documents(collection, retrieved_skills, 'occupation', 2)
 
-        # Mettre à jour les sets d'IDs uniques
-        unique_skills.update([skill_id for _, skill_id in retrieved_skills])
-        unique_occupations.update([occupation_id for _, occupation_id in retrieved_occupations])
+        retrieved_skills_ids = retrieved_skills['ids'][0] if 'ids' in retrieved_skills else []
+        similar_skills_ids = similar_skills['ids'][0] if 'ids' in similar_skills else []
+        retrieved_occupations_ids = retrieved_occupations['ids'][0] if 'ids' in retrieved_occupations else []
+        similar_occupations_ids = similar_occupations['ids'][0] if 'ids' in similar_occupations else []
 
-        #Rechercher les documents similaire
-        # similar_skills = get_similar_documents(collection, retrieved_skills, 'skill/com)
-        print(f"returned skills : {list(unique_skills)}")
-        print(f"returned occupations : {list(unique_occupations)}")
+        unique_skills.update(retrieved_skills_ids)
+        unique_occupations.update(retrieved_occupations_ids)
 
+        filtered_similar_skills_ids = set(similar_skills_ids) - unique_skills
+        filtered_similar_occupations_ids = set(similar_occupations_ids) - unique_occupations
 
-    return ProcessResponse(skills_ids=list(unique_skills), occupations_ids=list(unique_occupations))
+        unique_similar_skills.update(filtered_similar_skills_ids)
+        unique_similar_occupations.update(filtered_similar_occupations_ids)
 
+    return ProcessResponse(
+        selected_skills_ids=list(unique_skills),
+        selected_occupations_ids=list(unique_occupations),
+        suggested_skills_ids=list(unique_similar_skills),
+        suggested_occupations_ids=list(unique_similar_occupations)
+    )
