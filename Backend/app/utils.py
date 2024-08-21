@@ -148,6 +148,7 @@ async def process_cv(file_path: str, collection, model) -> ProcessResponse:
         print(f"query : {query}")
 
         # Retrieve docs for each experiences
+        # TODO determine distribution number of doc for each summary
         retrieved_skills = similarity_search_skills(query, collection, model, top_k=2)
         retrieved_occupations = similarity_search_occupations(query, collection, model, top_k=1)
 
