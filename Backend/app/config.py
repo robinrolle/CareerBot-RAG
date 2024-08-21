@@ -9,5 +9,8 @@ GROQ_API_KEY = "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"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'data','processed_data', 'ESCO_embeddings'))
 COLLECTION_NAME = re.sub(r'[^a-zA-Z0-9_-]', '_', EMBEDDING_MODEL_NAME)[:63]
-
+NB_SELECTED_SKILLS = 10
+NB_SELECTED_OCCUPATIONS = 5
+NB_SUGGESTED_SKILLS = 15
+NB_SUGGESTED_OCCUPATIONS = 7
 print(DATABASE_DIR)

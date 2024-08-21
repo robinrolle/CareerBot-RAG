@@ -1,4 +1,3 @@
-
 from .models import ProcessResponse
 from langchain_community.document_loaders import PyMuPDFLoader
 import logging
@@ -7,7 +6,8 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_groq import ChatGroq
 from .templates import full_prompt
 import numpy as np
-from sklearn.cluster import KMeans
+from scipy.spatial.distance import pdist, squareform
+from .config import NB_SELECTED_SKILLS, NB_SELECTED_OCCUPATIONS, NB_SUGGESTED_SKILLS, NB_SUGGESTED_OCCUPATIONS
 
 
 GROQ_API_KEY = "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"
@@ -63,41 +63,61 @@ def summarize_pdf(extracted_text: str) -> List[dict]:
 
     return summaries
 
-def get_similar_documents(collection, retrieved_docs, doc_type, n_suggest):
-    # Extraire les embeddings des documents récupérés
-    embeddings = np.array(retrieved_docs['embeddings'][0])
+def get_similar_documents(db, docs, doc_type, n_suggest):
+    used_docs = set(doc for sublist in docs['documents'] for doc in sublist)
+    n_old = len(used_docs)
+    n_new = 2 * int(np.ceil(n_suggest / n_old))
 
-    # Déterminer le nombre de clusters pour KMeans
-    n_clusters = max(1, len(embeddings) // 10)
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+    # Calculer les distances entre les embeddings
+    embeddings = np.array([embedding for sublist in docs['embeddings'] for embedding in sublist])
 
-    # Regrouper les embeddings par clusters
-    clusters = kmeans.fit_predict(embeddings)
+    if len(embeddings) < 2:
+        raise ValueError("Pas assez d'embeddings pour calculer les distances.")
 
-    all_suggested_docs = {
-        'documents': [],
-        'embeddings': [],
-        'metadatas': [],
-        'ids': []
-    }
+    distances = pdist(embeddings, metric='cosine')
+    distance_matrix = squareform(distances)
 
-    # Pour chaque cluster, rechercher des documents similaires
-    for cluster in range(n_clusters):
-        cluster_embeddings = embeddings[clusters == cluster]
-        suggested_docs = collection.query(
-            query_embeddings=cluster_embeddings.tolist(),
-            n_results=n_suggest,
+    # Trier les documents par similarité
+    sorted_indices = np.argsort(distance_matrix.sum(axis=1))
+
+    # Aplatir les documents, embeddings et IDs pour un accès facile
+    flat_docs = [{'document': doc, 'embedding': emb, 'id': doc_id}
+                 for sublist_docs, sublist_embs, sublist_ids in zip(docs['documents'], docs['embeddings'], docs['ids'])
+                 for doc, emb, doc_id in zip(sublist_docs, sublist_embs, sublist_ids)]
+
+    sorted_docs = [flat_docs[i] for i in sorted_indices]
+
+    # Définir la taille des batchs
+    batch_size = 10  # Ajustez selon vos besoins
+
+    new_docs = []
+    for i in range(0, len(sorted_docs), batch_size):
+        batch = sorted_docs[i:i + batch_size]
+        batch_embeddings = [doc['embedding'] for doc in batch]
+
+        suggested_docs = db.query(
+            query_embeddings=batch_embeddings,
+            n_results=n_old + n_new,
             include=['embeddings', 'documents', 'metadatas'],
             where={"type": doc_type}
         )
 
-        # Ajouter les résultats à l'ensemble global
-        all_suggested_docs['documents'].extend(suggested_docs['documents'])
-        all_suggested_docs['embeddings'].extend(suggested_docs['embeddings'])
-        all_suggested_docs['metadatas'].extend(suggested_docs['metadatas'])
-        all_suggested_docs['ids'].extend(suggested_docs['ids'])
+        for docs_list, embs_list, ids_list in zip(suggested_docs['documents'], suggested_docs['embeddings'],
+                                                  suggested_docs['ids']):
+            cands = [{'documents': doc, 'embeddings': emb, 'ids': doc_id}
+                     for doc, emb, doc_id in zip(docs_list, embs_list, ids_list) if doc not in used_docs]
+            new_docs.extend(cands)
+            used_docs.update(doc['documents'] for doc in cands)
 
-    return all_suggested_docs
+    # Sélection finale
+    final_docs = []
+    for doc in new_docs:
+        if len(final_docs) < n_suggest:
+            final_docs.append(doc)
+        else:
+            break
+
+    return final_docs
 
 async def process_cv(file_path: str, collection, model) -> ProcessResponse:
     extracted_text = extract_pdf(file_path)
@@ -120,17 +140,18 @@ async def process_cv(file_path: str, collection, model) -> ProcessResponse:
         'ids': []
     }
 
-    for summary in summaries:
+
+    for i, summary in enumerate(summaries):
         items = summary['summary']
         print(f"items : {items}")
         query = ', '.join(items)
         print(f"query : {query}")
 
-        # Rechercher les compétences et occupations de base
+        # Retrieve docs for each experiences
         retrieved_skills = similarity_search_skills(query, collection, model, top_k=2)
         retrieved_occupations = similarity_search_occupations(query, collection, model, top_k=1)
 
-        # Ajouter les résultats aux ensembles agrégés
+        # Formating
         all_retrieved_skills['documents'].extend(retrieved_skills['documents'])
         all_retrieved_skills['embeddings'].extend(retrieved_skills['embeddings'])
         all_retrieved_skills['metadatas'].extend(retrieved_skills['metadatas'])
@@ -144,20 +165,17 @@ async def process_cv(file_path: str, collection, model) -> ProcessResponse:
         unique_skills.update(retrieved_skills['ids'][0] if 'ids' in retrieved_skills else [])
         unique_occupations.update(retrieved_occupations['ids'][0] if 'ids' in retrieved_occupations else [])
 
-    # Rechercher les documents similaires une fois pour toutes les compétences et occupations récupérées
-    similar_skills = get_similar_documents(collection, all_retrieved_skills, 'skill/competence', 15)
-    similar_occupations = get_similar_documents(collection, all_retrieved_occupations, 'occupation', 5)
+    # Get similar doc based on the retrieved ones
+    similar_skills = get_similar_documents(collection, all_retrieved_skills, 'skill/competence', NB_SUGGESTED_SKILLS)
+    similar_occupations = get_similar_documents(collection, all_retrieved_occupations, 'occupation', NB_SUGGESTED_OCCUPATIONS)
 
-    similar_skills_ids = set(similar_skills['ids'][0] if 'ids' in similar_skills else [])
-    similar_occupations_ids = set(similar_occupations['ids'][0] if 'ids' in similar_occupations else [])
+    similar_skills_ids = set([doc['ids'] for doc in similar_skills])
+    similar_occupations_ids = set([doc['ids'] for doc in similar_occupations])
 
-    # Filtrer les documents similaires pour éliminer ceux déjà récupérés
-    filtered_similar_skills_ids = similar_skills_ids - unique_skills
-    filtered_similar_occupations_ids = similar_occupations_ids - unique_occupations
 
     return ProcessResponse(
         selected_skills_ids=list(unique_skills),
         selected_occupations_ids=list(unique_occupations),
-        suggested_skills_ids=list(filtered_similar_skills_ids),
-        suggested_occupations_ids=list(filtered_similar_occupations_ids)
+        suggested_skills_ids=list(similar_skills_ids),
+        suggested_occupations_ids=list(similar_occupations_ids)
     )

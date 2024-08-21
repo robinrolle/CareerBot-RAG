@@ -6,6 +6,7 @@ from .models import ProcessResponse, UploadResponse, SuggestionResponse
 from .utils import process_cv, get_similar_documents
 from .database import chroma_collection, sentence_model
 import aiofiles
+from .config import NB_SUGGESTED_SKILLS, NB_SUGGESTED_OCCUPATIONS
 from typing import List
 
 UPLOAD_DIR = "uploads"
@@ -108,15 +109,13 @@ async def suggest_similar_skills(selected_skill_ids: List[str]):
             raise HTTPException(status_code=400, detail="No valid skill embeddings found")
 
         # Rechercher des documents similaires en utilisant get_similar_documents
-        similar_docs = get_similar_documents(chroma_collection, retrieved_docs, 'skill/competence', n_suggest=15)
+        similar_docs = get_similar_documents(chroma_collection, retrieved_docs, 'skill/competence', n_suggest=NB_SUGGESTED_SKILLS)
 
-        # Extraire les IDs des documents similaires et aplatir la liste
-        similar_ids = set([item for sublist in similar_docs['ids'] for item in sublist])
+        similar_skills_ids = set([doc['ids'] for doc in similar_docs])
 
-        # Filtrer les IDs pour exclure ceux déjà sélectionnés
-        filtered_similar_ids = similar_ids - set(selected_skill_ids)
 
-        return SuggestionResponse(suggested_ids=list(filtered_similar_ids))
+        return SuggestionResponse(suggested_ids=list(similar_skills_ids))
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -144,13 +143,12 @@ async def suggest_similar_occupations(selected_occupation_ids: List[str]):
         if not retrieved_docs['embeddings']:
             raise HTTPException(status_code=400, detail="No valid occupation embeddings found")
 
-        similar_docs = get_similar_documents(chroma_collection, retrieved_docs, 'occupation', n_suggest=10)
+        similar_docs = get_similar_documents(chroma_collection, retrieved_docs, 'occupation', n_suggest=NB_SUGGESTED_OCCUPATIONS)
 
-        similar_ids = set([item for sublist in similar_docs['ids'] for item in sublist])
+        similar_occupations_ids = set([doc['ids'] for doc in similar_docs])
 
-        filtered_similar_ids = similar_ids - set(selected_occupation_ids)
+        return SuggestionResponse(suggested_ids=list(similar_occupations_ids))
 
-        return SuggestionResponse(suggested_ids=list(filtered_similar_ids))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
