@@ -159,6 +159,66 @@ export default function Home() {
     setSuggestedOccupations(updatedSuggestions);
   };
 
+  const handleSuggestSkills = async () => {
+    setLoading(true);
+  
+    try {
+      const response = await fetch('http://localhost:8000/suggestions/skills', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(selectedSkills),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to fetch skill suggestions');
+      }
+  
+      const data = await response.json();
+  
+      // Assuming the API returns data in the format { suggested_ids: [...] }
+      const suggestedSkillIds = data.suggested_ids || [];
+  
+      setSuggestedSkills(suggestedSkillIds);
+  
+    } catch (error) {
+      console.error('Error fetching skill suggestions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleSuggestOccupations = async () => {
+    setLoading(true);
+  
+    try {
+      const response = await fetch('http://localhost:8000/suggestions/occupations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(selectedOccupations),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to fetch skill suggestions');
+      }
+  
+      const data = await response.json();
+  
+      // Assuming the API returns data in the format { suggested_ids: [...] }
+      const suggestedOccupationsIds = data.suggested_ids || [];
+  
+      setSuggestedOccupations(suggestedOccupationsIds);
+  
+    } catch (error) {
+      console.error('Error fetching skill suggestions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <Head>
@@ -246,6 +306,8 @@ export default function Home() {
                     // Remove from suggestion
                     setSuggestedSkills(suggestedSkills.filter(skill => skill !== selectedOption.value));
                   }}
+                  onSuggest={handleSuggestSkills}
+                  
                 />
               </div>
             )}
@@ -276,6 +338,9 @@ export default function Home() {
                     // Remove from suggestion
                     setSuggestedOccupations(suggestedOccupations.filter(occupation => occupation !== selectedOption.value));
                   }}
+
+                  onSuggest={handleSuggestOccupations}
+                  
                 />
               </div>
             )}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardHeader, CardBody, Chip } from "@nextui-org/react";
 
-const SuggestionsSection = ({ suggestions, options, onSelect }) => {
+const SuggestionsSection = ({ suggestions, options, onSelect, onSuggest }) => {
     const renderTags = () => {
         if (suggestions.length === 0) {
             return <div className="text-gray-500 mb-4">No suggestions</div>;
@@ -32,6 +32,12 @@ const SuggestionsSection = ({ suggestions, options, onSelect }) => {
             <Card className='px-1'>
                 <CardHeader className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold mt-4">Suggestions</h3>
+                    <button
+                        className="p-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-md shadow  hover:bg-red-500 transition duration-300 transform hover:scale-110"
+                        onClick={onSuggest}
+                    >
+                        Suggest
+                    </button>
                 </CardHeader>
                 <CardBody className="mt-4">
                     <div className="selections-container">
