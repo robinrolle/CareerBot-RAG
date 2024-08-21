@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardHeader, CardBody, Button, Chip } from "@nextui-org/react";
 import SearchBar from './SearchBar';
 
-const SelectionsSection = ({ title, selections, options, placeholder, onChange, onRemove }) => {
+const SelectionsSection = ({ title, selections, options, placeholder, onChange,onReset, onRemove }) => {
     const renderTags = () => {
         if (selections.length === 0) {
             return <div className="text-gray-500 mb-4">No selections</div>;
@@ -36,6 +36,13 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
             <Card className='px-1'>
                 <CardHeader className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold mt-4">{title}</h3>
+                    <button
+                        className="p-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-md shadow  hover:bg-red-500 transition duration-300 transform hover:scale-110"
+                        onClick={onReset}
+                    >
+                        Reset
+                    </button>
+                    
                 </CardHeader>
                 <CardBody className="mt-4">
                     <div className="selections-container">

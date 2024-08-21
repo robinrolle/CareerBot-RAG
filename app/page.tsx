@@ -19,11 +19,13 @@ export default function Home() {
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [suggestedSkills, setSuggestedSkills] = useState([]);
   const [responseSkills, setResponseSkills] = useState([]);
+  const [responseSuggestedSkills, setResponseSuggestedSkills] = useState([]);
 
   const [occupationsOptions, setOccupationsOptions] = useState([]);
   const [selectedOccupations, setSelectedOccupations] = useState([]);
   const [suggestedOccupations, setSuggestedOccupations] = useState([]);
   const [responseOccupations, setResponseOccupations] = useState([]);
+  const [responseSuggestedOccupations, setResponseSuggestedOccupations] = useState([]);
 
   const [activeTab, setActiveTab] = useState('skills');
 
@@ -91,9 +93,11 @@ export default function Home() {
         setResponseSkills(data.selected_skills_ids || []);
         setSelectedSkills(data.selected_skills_ids || []);
         setSuggestedSkills(data.suggested_skills_ids || []);
+        setResponseSuggestedSkills(data.suggested_skills_ids || []);
         setResponseOccupations(data.selected_occupations_ids || []);
         setSelectedOccupations(data.selected_occupations_ids || []);
         setSuggestedOccupations(data.suggested_occupations_ids || []);
+        setResponseSuggestedOccupations(data.suggested_occupations_ids || []);
 
         setAnalyzed(true);
     } catch (error) {
@@ -121,8 +125,9 @@ export default function Home() {
     }
   };
 
-  const resetSelectedSkills = () => {
+  const resetSelections = () => {
     setSelectedSkills(responseSkills);
+    setSuggestedSkills(responseSuggestedSkills)
   };
 
   const handleSkillsChange = (newSkills) => {
@@ -205,6 +210,7 @@ export default function Home() {
                 placeholder="Select skills..."
                 onChange={handleSkillsChange}
                 onRemove={removeSkill}
+                onReset={resetSelections}
             />
             <hr className="mb-4 mt-4"/>
 
