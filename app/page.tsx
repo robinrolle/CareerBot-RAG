@@ -57,7 +57,6 @@ export default function Home() {
     loadOccupationsOptions();
   }, []);
 
-
   const handleFileUpload = (filename) => {
     setUploadedFilename(filename);
     setAnalyzed(false);
@@ -111,33 +110,54 @@ export default function Home() {
     setActiveTab(tabKey);
   };
 
-
-  // Function to handle removing a skill from selections or suggestions
-  const removeSkill = (option, isSelection) => {
-    if (isSelection) {
+  // Function to handle removing a skill or occupation from selections or suggestions
+  const removeOption = (option, isSelection, type) => {
+    if (type === 'skills') {
+      if (isSelection) {
         setSelectedSkills(prevSelected =>
             prevSelected.filter(skill => skill !== option.value)
         );
-    } else {
+      } else {
         setSuggestedSkills(prevSuggested =>
             prevSuggested.filter(skill => skill !== option.value)
         );
+      }
+    } else if (type === 'occupations') {
+      if (isSelection) {
+        setSelectedOccupations(prevSelected =>
+            prevSelected.filter(occupation => occupation !== option.value)
+        );
+      } else {
+        setSuggestedOccupations(prevSuggested =>
+            prevSuggested.filter(occupation => occupation !== option.value)
+        );
+      }
     }
   };
 
-  const resetSelections = () => {
-    setSelectedSkills(responseSkills);
-    setSuggestedSkills(responseSuggestedSkills)
+  const resetSelections = (type) => {
+    if (type === 'skills') {
+      setSelectedSkills(responseSkills);
+      setSuggestedSkills(responseSuggestedSkills);
+    } else if (type === 'occupations') {
+      setSelectedOccupations(responseOccupations);
+      setSuggestedOccupations(responseSuggestedOccupations);
+    }
   };
 
   const handleSkillsChange = (newSkills) => {
     setSelectedSkills(newSkills);
-    // Remove new selected skill from suggestion if choosen by search bar and present in suggestion
+    // Remove new selected skill from suggestion if chosen by search bar and present in suggestion
     const updatedSuggestions = suggestedSkills.filter(skill => !newSkills.includes(skill));
     setSuggestedSkills(updatedSuggestions);
   };
 
-
+  const handleOccupationsChange = (newOccupations) => {
+    setSelectedOccupations(newOccupations);
+    // Remove new selected occupation from suggestion if chosen by search bar and present in suggestion
+    const updatedSuggestions = suggestedOccupations.filter(occupation => !newOccupations.includes(occupation));
+    setSuggestedOccupations(updatedSuggestions);
+  };
 
   return (
     <div className="min-h-screen">
@@ -170,7 +190,7 @@ export default function Home() {
 
           {uploadedFilename && (
             <button
-              className={`w-full p-4 text-white rounded-xl shadow max-w-md 
+              className={`w-full p-4 text-white rounded-xl shadow max-w-md mb-8
                         ${loading || analyzed ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
               onClick={handleSubmit}
               disabled={loading || analyzed}
@@ -203,31 +223,60 @@ export default function Home() {
             {activeTab === 'skills' && (
               <div className="skills-container w-full">
 
-            <SelectionsSection
-                title="identified"
-                selections={selectedSkills}
-                options={skillsOptions}
-                placeholder="Select skills..."
-                onChange={handleSkillsChange}
-                onRemove={removeSkill}
-                onReset={resetSelections}
-            />
-            <hr className="mb-4 mt-4"/>
+                <SelectionsSection
+                  title="Identified"
+                  selections={selectedSkills}
+                  options={skillsOptions}
+                  placeholder="Select skills..."
+                  onChange={handleSkillsChange}
+                  onRemove={(option, isSelection) => removeOption(option, isSelection, 'skills')}
+                  onReset={() => resetSelections('skills')}
+                />
+                <hr className="mb-4 mt-4"/>
 
-            <SuggestionsSection
-              title="Suggestions"
-              suggestions={suggestedSkills}
-              options={skillsOptions}
-              onSelect={(selectedOption) => {
-                // Add to selections
-                const newSelectedSkills = [...selectedSkills, selectedOption.value];
-                setSelectedSkills(newSelectedSkills);
-                
-                // Remove from suggestion
-                setSuggestedSkills(suggestedSkills.filter(skill => skill !== selectedOption.value));
-            }}
-            />
+                <SuggestionsSection
+                  title="Suggestions"
+                  suggestions={suggestedSkills}
+                  options={skillsOptions}
+                  onSelect={(selectedOption) => {
+                    // Add to selections
+                    const newSelectedSkills = [...selectedSkills, selectedOption.value];
+                    setSelectedSkills(newSelectedSkills);
 
+                    // Remove from suggestion
+                    setSuggestedSkills(suggestedSkills.filter(skill => skill !== selectedOption.value));
+                  }}
+                />
+              </div>
+            )}
+
+            {activeTab === 'occupations' && (
+              <div className="occupations-container w-full">
+
+                <SelectionsSection
+                  title="Identified"
+                  selections={selectedOccupations}
+                  options={occupationsOptions}
+                  placeholder="Select occupations..."
+                  onChange={handleOccupationsChange}
+                  onRemove={(option, isSelection) => removeOption(option, isSelection, 'occupations')}
+                  onReset={() => resetSelections('occupations')}
+                />
+                <hr className="mb-4 mt-4"/>
+
+                <SuggestionsSection
+                  title="Suggestions"
+                  suggestions={suggestedOccupations}
+                  options={occupationsOptions}
+                  onSelect={(selectedOption) => {
+                    // Add to selections
+                    const newSelectedOccupations = [...selectedOccupations, selectedOption.value];
+                    setSelectedOccupations(newSelectedOccupations);
+
+                    // Remove from suggestion
+                    setSuggestedOccupations(suggestedOccupations.filter(occupation => occupation !== selectedOption.value));
+                  }}
+                />
               </div>
             )}
           </div>
