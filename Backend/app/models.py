@@ -10,3 +10,6 @@ class ProcessResponse(BaseModel):
     selected_occupations_ids: List[str]
     suggested_skills_ids : List[str]
     suggested_occupations_ids : List[str]
+
+class SuggestionResponse(BaseModel):
+    suggested_ids : List[str]
