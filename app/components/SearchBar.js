@@ -5,7 +5,7 @@ import { styled } from '@mui/material/styles';
 
 const CustomTextField = styled(TextField)({
     '& .MuiOutlinedInput-root': {
-        borderRadius: '4px', // Ajuste cette valeur pour obtenir l'arrondi désiré
+        borderRadius: '4px',
     },
 });
 
@@ -15,7 +15,7 @@ const SearchBar = ({ options, value, onChange, placeholder }) => {
     const handleSelect = (event, newValue) => {
         if (newValue) {
             onChange([...value, newValue.value]);
-            setInputValue('');  // Vider l'input après la sélection
+            setInputValue('');  
         }
     };
 
@@ -37,7 +37,7 @@ const SearchBar = ({ options, value, onChange, placeholder }) => {
             )}
             className="mb-4 w-full"
             disableClearable
-            value={null} // Ajoutez ceci pour réinitialiser la sélection après le choix
+            value={null} // Clear text after selections
         />
     );
 };
