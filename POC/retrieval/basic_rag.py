@@ -8,6 +8,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_chroma import Chroma
 from langchain_core.runnables import Runnable, RunnableSequence
 from langchain_core.output_parsers import JsonOutputParser
+from langchain_community.document_loaders import PyMuPDFLoader
 import chromadb
 from POC.retrieval.prompts import templates
 from langsmith import traceable
@@ -25,6 +26,7 @@ langsmith = Client()
 # Define the relative path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'data','processed_data', 'ESCO_embeddings'))
+PDF_PATH = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'data','CVs', 'accountant.pdf'))
 
 # Models config
 EMBEDDING_MODEL_NAME = "text-embedding-3-small"
@@ -199,6 +201,30 @@ def get_similar_documents(db, docs, doc_type, n_suggest):
 
     return final_docs
 
+@traceable
+def extract_pdf(pdf_path):
+    """Return extracted text from PDF File"""
+    loader = PyMuPDFLoader(pdf_path)
+    data = loader.load()
+    return " ".join(page.page_content for page in data)
+
+@traceable(name="Skills LLM Call")
+def invoke_skills_chain(chain, input_text, context_skills):
+    return chain.invoke({
+        "question": input_text,
+        "context": context_skills,
+        "LLM_MAX_PICKS": LLM_MAX_PICKS[0],
+    })
+
+@traceable(name="Occupations LLM Call")
+def invoke_occupations_chain(chain, input_text, context_occupations):
+    return chain.invoke({
+        "question": input_text,
+        "context": context_occupations,
+        "LLM_MAX_PICKS": LLM_MAX_PICKS[1],
+    })
+
+
 @traceable(name=f"Trace: {GENERATION_MODEL_NAME} + {EMBEDDING_MODEL_NAME}")
 def main():
     # Init embedding functiion
@@ -208,11 +234,9 @@ def main():
     chroma_client = chromadb.PersistentClient(path=str(DATABASE_DIR))
     db = Chroma(client=chroma_client, collection_name=collection_name, embedding_function=embedding_ef)
 
+
     #Exemple user input
-    input_text = """
-    I have worked last 5 years as a contractor that sells and installs heat pumps for consumers. 
-    I have an engineering degree and know lots of refrigerants, and technology of heating and cooling systems. 
-    I have a license to do electrical jobs."""
+    input_text = extract_pdf(PDF_PATH)
 
     # Turn input into embedding
     input_embedding = embedding_ef.embed_query(text=input_text)
@@ -228,27 +252,15 @@ def main():
 
     chain = initialize_chain()
 
-    # LLM call for skills
-    skills_response = chain.invoke({
-        "question": input_text,
-        "context": context_skills,
-        "LLM_MAX_PICKS": LLM_MAX_PICKS[0],
-    })
+    skills_response = invoke_skills_chain(chain, input_text, context_skills)
+    occupations_response = invoke_occupations_chain(chain, input_text, context_occupations)
 
-    # LLM call for occupations
-    occupations_response = chain.invoke({
-        "question": input_text,
-        "context": context_occupations,
-        "LLM_MAX_PICKS": LLM_MAX_PICKS[1],
-    })
-
-
-    # Map and structure the terms for skills and occupations
+    # Map and structure the terms for skills and occupations / Formatting data
     structured_skills = map_and_structure_terms(retrieved_skills, skills_response, 'skill/competence')
     structured_occupations = map_and_structure_terms(retrieved_occupations, occupations_response, 'occupation')
 
+    # Find suggestions based on LLM answer
     similar_skills = get_similar_documents(db, structured_skills, 'skill/competence', VECTORSTORE_MAX_SUGGESTED[0])
-
     similar_occupations = get_similar_documents(db, structured_occupations, 'occupation', VECTORSTORE_MAX_SUGGESTED[1])
 
 
