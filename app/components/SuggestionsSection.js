@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardHeader, CardBody, Chip } from "@nextui-org/react";
+import { Card, CardHeader, CardBody, Chip, CardFooter } from "@nextui-org/react";
 
 const SuggestionsSection = ({ suggestions, options, onSelect, onSuggest }) => {
     const renderTags = () => {
@@ -32,18 +32,20 @@ const SuggestionsSection = ({ suggestions, options, onSelect, onSuggest }) => {
             <Card className='px-1'>
                 <CardHeader className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold mt-4">Suggestions</h3>
-                    <button
-                        className="p-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-md shadow  hover:bg-red-500 transition duration-300 transform hover:scale-110"
-                        onClick={onSuggest}
-                    >
-                        Suggest
-                    </button>
                 </CardHeader>
                 <CardBody className="mt-4">
                     <div className="selections-container">
                         <div>{renderTags()}</div>
                     </div>
                 </CardBody>
+                <CardFooter className='justify-end'>
+                        <button
+                            className="p-2 flex text-sm font-medium text-gray-800 border-gray-300  border border-gray-300 rounded-md shadow hover:bg-blue-600 transition duration-300 transform hover:scale-110"
+                            onClick={onSuggest}
+                        >
+                        Refresh suggestions
+                    </button>
+                </CardFooter>
             </Card>
         </div>
     );
