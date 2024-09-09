@@ -10,8 +10,9 @@ import tiktoken
 # Configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'POC', 'evaluations', 'results'))
-INPUT_CSV = os.path.join(RESULTS_DIR, 'naive_rag_experiement_results.csv')
-OUTPUT_CSV = os.path.join(RESULTS_DIR, 'naive_rag_experiement_eval.csv')
+
+INPUT_CSV = os.path.join(RESULTS_DIR, 'hyde_experiment_results.csv')
+OUTPUT_CSV = os.path.join(RESULTS_DIR, 'hyde_experiment_eval.csv')
 
 # Set the OpenAI API key and LangSmith environment variables
 os.environ['OPENAI_API_KEY'] = "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"
@@ -19,7 +20,7 @@ os.environ['OPENAI_API_KEY'] = "sk-proj-os_AuiDEb_JbUD5HcBWHmw_RY9hdOvp1FiRTXPvM
 # Initialize OpenAI client
 client = OpenAI()
 
-JUDGE_MODEL = "gpt-4o"
+JUDGE_MODEL = "gpt-4o-2024-08-06"
 
 # Initialize tokenizer
 tokenizer = tiktoken.encoding_for_model(JUDGE_MODEL)
