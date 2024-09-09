@@ -10,9 +10,10 @@ import tiktoken
 # Configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'POC', 'evaluations', 'results'))
-
-INPUT_CSV = os.path.join(RESULTS_DIR, 'hyde_experiment_results.csv')
-OUTPUT_CSV = os.path.join(RESULTS_DIR, 'hyde_experiment_eval.csv')
+INPUT_FILENAME = 'hyde_experiment_results.csv' # Change filename to evaluate
+OUTPUT_FILENAME = 'hyde_experiment_eval.csv' # Change output evaluation filename
+INPUT_CSV = os.path.join(RESULTS_DIR, INPUT_FILENAME)
+OUTPUT_CSV = os.path.join(RESULTS_DIR, OUTPUT_FILENAME)
 
 # Set the OpenAI API key and LangSmith environment variables
 os.environ['OPENAI_API_KEY'] = "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"
