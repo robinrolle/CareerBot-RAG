@@ -8,13 +8,29 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
             case 'HIGH':
                 return 'bg-green-500';
             case 'MEDIUM':
-                return 'bg-blue-500';
+                return 'bg-yellow-500';
             case 'LOW':
-                return 'bg-orange-500';
+                return 'bg-red-500';
             default:
                 return 'bg-gray-500';
         }
     };
+
+    const renderColorLegend = () => (
+        <div className="flex items-center space-x-4 mb-2">
+            <span className="text-sm font-medium">Relevance:</span>
+            {[
+                { color: 'bg-green-500', label: 'High' },
+                { color: 'bg-yellow-500', label: 'Medium' },
+                { color: 'bg-red-500', label: 'Low' },
+            ].map(({ color, label }) => (
+                <div key={label} className="flex items-center">
+                    <span className={`inline-block w-2 h-2 rounded-full mr-1 ${color}`}></span>
+                    <span className="text-xs">{label}</span>
+                </div>
+            ))}
+        </div>
+    );
 
     const renderTags = () => {
         if (selections.length === 0) {
@@ -47,14 +63,17 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
     return (
         <div className="suggestions-container bg-white shadow-lg rounded-lg px-5 py-4">
             <Card className='px-1'>
-                <CardHeader className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold mt-4">{title}</h3>
-                    <button
-                        className="p-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-md shadow hover:bg-red-500 transition duration-300 transform hover:scale-110"
-                        onClick={onReset}
-                    >
-                        Reset
-                    </button>
+                <CardHeader className="flex flex-col items-start">
+                    <div className="flex justify-between items-center w-full">
+                        <h3 className="text-lg font-semibold mt-4">{title}</h3>
+                        <button
+                            className="p-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-md shadow hover:bg-red-500 transition duration-300 transform hover:scale-110"
+                            onClick={onReset}
+                        >
+                            Reset
+                        </button>
+                    </div>
+                    {renderColorLegend()}
                 </CardHeader>
                 <CardBody className="mt-4">
                     <div className="selections-container">
