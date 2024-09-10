@@ -89,14 +89,25 @@ export default function Home() {
 
         const data = await response.json();
 
-        setResponseSkills(data.selected_skills_ids || []);
-        setSelectedSkills(data.selected_skills_ids || []);
-        setSuggestedSkills(data.suggested_skills_ids || []);
-        setResponseSuggestedSkills(data.suggested_skills_ids || []);
-        setResponseOccupations(data.selected_occupations_ids || []);
-        setSelectedOccupations(data.selected_occupations_ids || []);
-        setSuggestedOccupations(data.suggested_occupations_ids || []);
-        setResponseSuggestedOccupations(data.suggested_occupations_ids || []);
+        // Compétences extraites et notées
+        const gradedSkills = data.graded_skills.map(skill => skill.id);
+        setResponseSkills(gradedSkills);
+        setSelectedSkills(gradedSkills);
+
+        // Suggestions de compétences
+        const suggestedSkills = data.suggestions.suggested_skills_ids || [];
+        setSuggestedSkills(suggestedSkills);
+        setResponseSuggestedSkills(suggestedSkills);
+
+        // Professions extraites et notées
+        const gradedOccupations = data.graded_occupations.map(occupation => occupation.id);
+        setResponseOccupations(gradedOccupations);
+        setSelectedOccupations(gradedOccupations);
+
+        // Suggestions de professions
+        const suggestedOccupations = data.suggestions.suggested_occupations_ids || [];
+        setSuggestedOccupations(suggestedOccupations);
+        setResponseSuggestedOccupations(suggestedOccupations);
 
         setAnalyzed(true);
     } catch (error) {
@@ -104,7 +115,8 @@ export default function Home() {
     } finally {
         setLoading(false);
     }
-  };
+};
+
 
   const handleTabChange = (tabKey) => {
     setActiveTab(tabKey);
@@ -163,61 +175,60 @@ export default function Home() {
     setLoading(true);
   
     try {
-      const response = await fetch('http://localhost:8000/suggestions/skills', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(selectedSkills),
-      });
+        const response = await fetch('http://localhost:8000/suggestions/skills', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(selectedSkills),
+        });
   
-      if (!response.ok) {
-        throw new Error('Failed to fetch skill suggestions');
-      }
+        if (!response.ok) {
+            throw new Error('Failed to fetch skill suggestions');
+        }
   
-      const data = await response.json();
+        const data = await response.json();
+        const suggestedSkillIds = data.suggested_skills_ids || [];
   
-      // Assuming the API returns data in the format { suggested_ids: [...] }
-      const suggestedSkillIds = data.suggested_ids || [];
-  
-      setSuggestedSkills(suggestedSkillIds);
+        setSuggestedSkills(suggestedSkillIds);
   
     } catch (error) {
-      console.error('Error fetching skill suggestions:', error);
+        console.error('Error fetching skill suggestions:', error);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
+
+
   
-  const handleSuggestOccupations = async () => {
-    setLoading(true);
-  
-    try {
+const handleSuggestOccupations = async () => {
+  setLoading(true);
+
+  try {
       const response = await fetch('http://localhost:8000/suggestions/occupations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(selectedOccupations),
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(selectedOccupations),
       });
-  
+
       if (!response.ok) {
-        throw new Error('Failed to fetch skill suggestions');
+          throw new Error('Failed to fetch occupation suggestions');
       }
-  
+
       const data = await response.json();
-  
-      // Assuming the API returns data in the format { suggested_ids: [...] }
-      const suggestedOccupationsIds = data.suggested_ids || [];
-  
+      const suggestedOccupationsIds = data.suggested_occupations_ids || [];
+
       setSuggestedOccupations(suggestedOccupationsIds);
-  
-    } catch (error) {
-      console.error('Error fetching skill suggestions:', error);
-    } finally {
+
+  } catch (error) {
+      console.error('Error fetching occupation suggestions:', error);
+  } finally {
       setLoading(false);
-    }
-  };
+  }
+};
+
 
   return (
     <div className="min-h-screen">
