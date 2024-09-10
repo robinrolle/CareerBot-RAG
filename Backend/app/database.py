@@ -1,21 +1,20 @@
-import chromadb
-from chromadb.utils import embedding_functions
-from sentence_transformers import SentenceTransformer
+import os
+import faiss
+import json
 from .config import EMBEDDING_MODEL_NAME, DATABASE_DIR, COLLECTION_NAME
 
-def init_chroma_db():
-    model = SentenceTransformer(EMBEDDING_MODEL_NAME)
-    embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=EMBEDDING_MODEL_NAME)
+def load_faiss_index_and_metadata():
+    faiss_index_path = os.path.join(DATABASE_DIR, f"{COLLECTION_NAME}_faiss.index")
+    metadata_path = os.path.join(DATABASE_DIR, f"{COLLECTION_NAME}_metadata.json")
 
-    chroma_client = chromadb.PersistentClient(path=str(DATABASE_DIR))
+    if not os.path.exists(faiss_index_path) or not os.path.exists(metadata_path):
+        raise FileNotFoundError(f"Index not found : {COLLECTION_NAME}")
 
-    try:
-        collection = chroma_client.get_collection(COLLECTION_NAME)
-        print("Database loaded and ready")
-    except Exception as e:
-        print(f"Failed to load the database: {e}")
-        raise
+    index = faiss.read_index(faiss_index_path)
 
-    return collection, model
+    with open(metadata_path, "r") as f:
+        metadata = json.load(f)
 
-chroma_collection, sentence_model = init_chroma_db()
+    return index, metadata
+
+faiss_index, faiss_metadata = load_faiss_index_and_metadata()

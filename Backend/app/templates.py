@@ -1,61 +1,29 @@
-from langchain_core.prompts import SystemMessagePromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain.prompts import SystemMessagePromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate
 
-# System prompt template
+
+# Step 2: Define the system and human prompt templates
 system_prompt = SystemMessagePromptTemplate.from_template(
     """
-    You are an assistant tasked with extracting and summarizing professional experiences from a given CV. 
-    Your goal is to identify and separate individual experiences from the provided text, focusing specifically on the content and skills demonstrated, 
-    while excluding any dates, durations, or company names. Each experience should be summarized clearly and concisely, 
-    highlighting the key skills and responsibilities. The final output should be formatted as JSON, with each experience and its corresponding summary 
-    presented as asked.
+    You are an expert in analyzing CVs and accurately extracting {doc_type} from them.
+    These {doc_type} may be explicitly mentioned or may require careful analysis of the candidate's education, work experience, and other relevant sections of the CV.
+    Your task is to analyze the provided CV text and extract the relevant {doc_type}.
+    Use only name {doc_type} that are part of the ESCO (European Skills, Competences, Qualifications and Occupations) dataset.
+    Provide your response in JSON format, strictly following the structure below:
+     {{
+            "items": [
+                {{
+                    "name": "{doc_type} name"
+                }},
+                ...
+            ]
+        }}
+    Do not include any additional explanations or comments outside of this format.
     """
 )
 
-# Main prompt template
-main_prompt = HumanMessagePromptTemplate.from_template(
-    """
-    Extract and separate each experience written in the following CV text.
-    Focus on the experiences content itself, and exclude any dates, durations, and company names.
-    Summarize each experience. Focus on describing the skills demonstrated in each experience.
-    Each summary should be in JSON format as shown below:
-    {{
-        "summaries": [
-            {{
-                "experience": "Title experience 1",
-                "summary": ["summarized text experience 1"]
-            }},
-            {{
-                "experience": "Title experience 2",
-                "summary": ["summarized text experience 2"]
-            }}
-        ]
-    }}
-
-    CV Text:
-    {cv_text}
-    """
+human_prompt = HumanMessagePromptTemplate.from_template(
+    """ CV Text: {cv_text} """
 )
 
-# Full prompt ready to be used
-full_prompt = ChatPromptTemplate.from_messages([system_prompt, main_prompt])
-
-full_prompt_text = """
-You are an assistant tasked with extracting and summarizing professional experiences from a given CV. Your goal is to identify and separate individual experiences from the provided text, focusing specifically on the content and skills demonstrated, while excluding any dates, durations, or company names. Each experience should be summarized clearly and concisely, highlighting the key skills and responsibilities. The final output should be formatted as JSON, with each experience and its corresponding summary presented as asked.
-
-Extract and separate each experience written in the following CV text. Focus on the experiences content itself, and exclude any dates, durations, and company names. Summarize each experience. Focus on describing the skills demonstrated in each experience. Each summary should be in JSON format as shown below:
-
-{
-    "summaries": [
-        {
-            "experience": "Title experience 1",
-            "summary": ["summarized text experience 1"]
-        },
-        {
-            "experience": "Title experience 2",
-            "summary": ["summarized text experience 2"]
-        }
-    ]
-}
-
-"""
-
+# Step 3: Combine the system and human prompts into a full chat prompt template
+full_prompt = ChatPromptTemplate.from_messages([system_prompt, human_prompt])

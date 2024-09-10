@@ -2,12 +2,12 @@ import os
 import uuid
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from .models import ProcessResponse, UploadResponse, SuggestionResponse
-from .utils import process_cv, get_similar_documents
-from .database import chroma_collection, sentence_model
-import aiofiles
+from .models import ProcessResponse, UploadResponse, SuggestionResponse, OccupationSuggestionResponse, SkillSuggestionResponse
+from .utils import process_cv, get_similar_documents_faiss
+from .database import faiss_index, faiss_metadata
 from .config import NB_SUGGESTED_SKILLS, NB_SUGGESTED_OCCUPATIONS
 from typing import List
+import aiofiles
 
 UPLOAD_DIR = "uploads"
 ALLOWED_EXTENSIONS = {"pdf"}
@@ -28,16 +28,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 def allowed_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 def generate_unique_filename(filename: str) -> str:
     ext = filename.rsplit('.', 1)[1].lower()
     unique_name = f"{uuid.uuid4()}.{ext}"
     return unique_name
-
 
 @app.post("/upload", response_model=UploadResponse)
 async def upload_file(file: UploadFile = File(...)):
@@ -57,7 +54,6 @@ async def upload_file(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.post("/process", response_model=ProcessResponse)
 async def process_cv_endpoint(filename: str):
     file_path = os.path.join(UPLOAD_DIR, filename)
@@ -65,10 +61,9 @@ async def process_cv_endpoint(filename: str):
         raise HTTPException(status_code=404, detail="File not found")
 
     try:
-        return await process_cv(file_path, chroma_collection, sentence_model)
+        return await process_cv(file_path)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.delete("/delete/{filename}")
 async def delete_file(filename: str):
@@ -82,79 +77,34 @@ async def delete_file(filename: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-@app.post("/suggestions/skills", response_model=SuggestionResponse)
+@app.post("/suggestions/skills", response_model=SkillSuggestionResponse)
 async def suggest_similar_skills(selected_skill_ids: List[str]):
     try:
-        # Récupérer les documents correspondants aux IDs fournis
-        retrieved_docs = {
-            'documents': [],
-            'embeddings': [],
-            'metadatas': [],
-            'ids': []
-        }
+        if not selected_skill_ids:
+            raise HTTPException(status_code=400, detail="No skill IDs provided")
 
-        for skill_id in selected_skill_ids:
-            doc = chroma_collection.get(ids=skill_id, include=['documents', 'embeddings', 'metadatas'])
-            if doc:
-                retrieved_docs['documents'].append(doc['documents'])
-                retrieved_docs['embeddings'].append(doc['embeddings'])
-                retrieved_docs['metadatas'].append(doc['metadatas'])
-                retrieved_docs['ids'].append(doc['ids'])
-            else:
-                raise HTTPException(status_code=404, detail=f"Skill ID {skill_id} not found")
+        similar_skills = get_similar_documents_faiss(selected_skill_ids, 'skill/competence', NB_SUGGESTED_SKILLS)
+        similar_skills_ids = [doc['id'] for doc in similar_skills]
 
-        # Si aucun embedding n'est trouvé
-        if not retrieved_docs['embeddings']:
-            raise HTTPException(status_code=400, detail="No valid skill embeddings found")
-
-        # Rechercher des documents similaires en utilisant get_similar_documents
-        similar_docs = get_similar_documents(chroma_collection, retrieved_docs, 'skill/competence', n_suggest=NB_SUGGESTED_SKILLS)
-
-        similar_skills_ids = set([doc['ids'] for doc in similar_docs])
-
-
-        return SuggestionResponse(suggested_ids=list(similar_skills_ids))
+        return SkillSuggestionResponse(suggested_skills_ids=similar_skills_ids)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-@app.post("/suggestions/occupations", response_model=SuggestionResponse)
+@app.post("/suggestions/occupations", response_model=OccupationSuggestionResponse)
 async def suggest_similar_occupations(selected_occupation_ids: List[str]):
     try:
-        retrieved_docs = {
-            'documents': [],
-            'embeddings': [],
-            'metadatas': [],
-            'ids': []
-        }
+        if not selected_occupation_ids:
+            raise HTTPException(status_code=400, detail="No occupation IDs provided")
 
-        for occupation_id in selected_occupation_ids:
-            doc = chroma_collection.get(ids=occupation_id, include=['documents', 'embeddings', 'metadatas'])
-            if doc:
-                retrieved_docs['documents'].append(doc['documents'])
-                retrieved_docs['embeddings'].append(doc['embeddings'])
-                retrieved_docs['metadatas'].append(doc['metadatas'])
-                retrieved_docs['ids'].append(doc['ids'])
-            else:
-                raise HTTPException(status_code=404, detail=f"Occupation ID {occupation_id} not found")
+        similar_occupations = get_similar_documents_faiss(selected_occupation_ids, 'occupation', NB_SUGGESTED_OCCUPATIONS)
+        similar_occupations_ids = [doc['id'] for doc in similar_occupations]
 
-        if not retrieved_docs['embeddings']:
-            raise HTTPException(status_code=400, detail="No valid occupation embeddings found")
-
-        similar_docs = get_similar_documents(chroma_collection, retrieved_docs, 'occupation', n_suggest=NB_SUGGESTED_OCCUPATIONS)
-
-        similar_occupations_ids = set([doc['ids'] for doc in similar_docs])
-
-        return SuggestionResponse(suggested_ids=list(similar_occupations_ids))
+        return OccupationSuggestionResponse(suggested_occupations_ids=similar_occupations_ids)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8000)

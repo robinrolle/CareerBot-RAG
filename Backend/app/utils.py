@@ -1,42 +1,42 @@
-from .models import ProcessResponse
+import os
+from typing import List, Dict
+from .models import ProcessResponse, SuggestionResponse
 from langchain_community.document_loaders import PyMuPDFLoader
 import logging
-from typing import List, Tuple
-from langchain_core.output_parsers import JsonOutputParser
-from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from .database import faiss_index, faiss_metadata
 from .templates import full_prompt
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
-from .config import NB_SELECTED_SKILLS, NB_SELECTED_OCCUPATIONS, NB_SUGGESTED_SKILLS, NB_SUGGESTED_OCCUPATIONS
+from .config import EMBEDDING_MODEL_NAME, GENERATION_MODEL_NAME, NB_SUGGESTED_SKILLS, NB_SUGGESTED_OCCUPATIONS, OPENAI_API_KEY, VECTORSTORE_MAX_RETRIEVED, LLM_MAX_PICKS
+from .models import ExtractedItems, GradedItem
+from langchain_core.runnables import RunnableSequence
+from langchain_core.output_parsers import JsonOutputParser
+from langchain.prompts import ChatPromptTemplate
+import traceback
 
-
-GROQ_API_KEY = "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"
+os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def similarity_search(query_text: str, collection, model, top_k: int, filter_type: str = None):
-    try:
-        query_embedding = model.encode(query_text).tolist()
-        results = collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k,
-            where={'type': filter_type},
-            include=['embeddings', 'documents', 'metadatas']
-        )
+embedding_ef = OpenAIEmbeddings(model=EMBEDDING_MODEL_NAME)
 
-        # Return results
-        return results
+def query_faiss_index(query_embedding, doc_type, max_retrieved):
+    query_embedding = np.array([query_embedding]).astype('float32')
+    distances, indices = faiss_index.search(query_embedding, max_retrieved)
 
-    except Exception as e:
-        logger.error(f"Failed to perform similarity search: {e}")
-        return []
+    results = []
+    for i, idx in enumerate(indices[0]):
+        if faiss_metadata['metadatas'][idx]['type'] == doc_type:
+            results.append({
+                'id': faiss_metadata['ids'][idx],
+                'document': faiss_metadata['documents'][idx],
+                'metadata': faiss_metadata['metadatas'][idx],
+                'distance': distances[0][i]
+            })
 
-def similarity_search_skills(query_text: str, collection, model, top_k: int):
-    return similarity_search(query_text, collection, model, top_k, filter_type='skill/competence')
-
-def similarity_search_occupations(query_text: str, collection, model, top_k: int):
-    return similarity_search(query_text, collection, model, top_k, filter_type='occupation')
+    return results[:max_retrieved]
 
 def extract_pdf(file_path: str) -> str:
     loader = PyMuPDFLoader(file_path)
@@ -46,137 +46,175 @@ def extract_pdf(file_path: str) -> str:
         extracted_text_pdf += page.page_content
     return extracted_text_pdf
 
-def summarize_pdf(extracted_text: str) -> List[dict]:
+def process_cv_text_chain():
+    model = ChatOpenAI(model=GENERATION_MODEL_NAME, temperature=0)
+    structured_llm = model.with_structured_output(ExtractedItems)
+    chain = RunnableSequence(
+        full_prompt |
+        structured_llm
+    )
+    return chain
 
-    inputs = {"cv_text": extracted_text}
-    model = ChatGroq(model_name="llama-3.1-8b-instant", temperature=0, groq_api_key=GROQ_API_KEY)
+def grading_chain(doc_type):
+    prompt = ChatPromptTemplate.from_template("""
+    Given the following CV content and a list of potential {doc_type}, please identify the most relevant {doc_type} for this CV. 
 
-    response = model.invoke(full_prompt.format_messages(**inputs))
+    CV Content: {question}
 
-    parser = JsonOutputParser()
-    try:
-        llm_response = parser.parse(response.content)
-        summaries = llm_response.get('summaries', [])
-    except Exception as e:
-        logger.error(f"Failed to parse LLM summary response: {e}")
-        summaries = []
+    Potential {doc_type}:
+    {context}
 
-    return summaries
+    Please provide your answer in JSON format with a list of the most relevant items, up to a maximum of {max_picks} items.
+    For each item, include the 'id', 'item' (the text after the '|'), and a 'relevance' score (HIGH, MEDIUM, or LOW) based on how well it matches the CV.
 
-def get_similar_documents(db, docs, doc_type, n_suggest):
-    used_docs = set(doc for sublist in docs['documents'] for doc in sublist)
-    n_old = len(used_docs)
+    Example format:
+    {{
+        "items": [
+            {{"id": "id_123", "item": "Financial reporting", "relevance": "HIGH"}},
+            {{"id": "id_456", "item": "Budgeting", "relevance": "MEDIUM"}}
+        ]
+    }}
+    """)
+
+    model = ChatOpenAI(model=GENERATION_MODEL_NAME, temperature=0)
+    output_parser = JsonOutputParser()
+
+    chain = RunnableSequence(
+        prompt |
+        model |
+        output_parser
+    )
+
+    return chain
+
+
+def get_similar_documents_faiss(ids: List[str], doc_type: str, n_suggest: int) -> List[Dict]:
+    used_ids = set(ids)
+    n_old = len(used_ids)
     n_new = 2 * int(np.ceil(n_suggest / n_old))
 
-    # Calculer les distances entre les embeddings
-    embeddings = np.array([embedding for sublist in docs['embeddings'] for embedding in sublist])
+    # Retrieve the embeddings that correspond to the ids using faiss
+    embeddings = []
+    for id in ids:
+        idx = faiss_metadata['ids'].index(id)
+        embedding = faiss_index.reconstruct(idx)
+        embeddings.append(embedding)
+
+    embeddings = np.array(embeddings).astype('float32')
 
     if len(embeddings) < 2:
         raise ValueError("Pas assez d'embeddings pour calculer les distances.")
 
-    distances = pdist(embeddings, metric='cosine')
-    distance_matrix = squareform(distances)
-
-    # Trier les documents par similarité
-    sorted_indices = np.argsort(distance_matrix.sum(axis=1))
-
-    # Aplatir les documents, embeddings et IDs pour un accès facile
-    flat_docs = [{'document': doc, 'embedding': emb, 'id': doc_id}
-                 for sublist_docs, sublist_embs, sublist_ids in zip(docs['documents'], docs['embeddings'], docs['ids'])
-                 for doc, emb, doc_id in zip(sublist_docs, sublist_embs, sublist_ids)]
-
-    sorted_docs = [flat_docs[i] for i in sorted_indices]
-
-    # Définir la taille des batchs
-    batch_size = 10  # Ajustez selon vos besoins
+    distances, indices = faiss_index.search(embeddings, n_old + n_new)
 
     new_docs = []
-    for i in range(0, len(sorted_docs), batch_size):
-        batch = sorted_docs[i:i + batch_size]
-        batch_embeddings = [doc['embedding'] for doc in batch]
+    for doc_idx, (distances_row, indices_row) in enumerate(zip(distances, indices)):
+        for dist, idx in zip(distances_row, indices_row):
+            if idx != -1:  # FAISS returns -1 for invalid results
+                doc = faiss_metadata['documents'][idx]
+                doc_id = faiss_metadata['ids'][idx]
+                if doc_id not in used_ids:
+                    new_docs.append({
+                        'document': doc,
+                        'id': doc_id,
+                        'distance': dist
+                    })
+                    used_ids.add(doc_id)
 
-        suggested_docs = db.query(
-            query_embeddings=batch_embeddings,
-            n_results=n_old + n_new,
-            include=['embeddings', 'documents', 'metadatas'],
-            where={"type": doc_type}
-        )
+    new_docs.sort(key=lambda x: x['distance'])
 
-        for docs_list, embs_list, ids_list in zip(suggested_docs['documents'], suggested_docs['embeddings'],
-                                                  suggested_docs['ids']):
-            cands = [{'documents': doc, 'embeddings': emb, 'ids': doc_id}
-                     for doc, emb, doc_id in zip(docs_list, embs_list, ids_list) if doc not in used_docs]
-            new_docs.extend(cands)
-            used_docs.update(doc['documents'] for doc in cands)
-
-    # Sélection finale
-    final_docs = []
-    for doc in new_docs:
-        if len(final_docs) < n_suggest:
-            final_docs.append(doc)
-        else:
-            break
+    final_docs = new_docs[:n_suggest]
 
     return final_docs
 
-async def process_cv(file_path: str, collection, model) -> ProcessResponse:
-    extracted_text = extract_pdf(file_path)
-    summaries = summarize_pdf(extracted_text)
-    print(f"summaries : {summaries}")
+async def process_cv(file_path: str) -> ProcessResponse:
+    try:
+        input_text = extract_pdf(file_path)
+        logger.info(f"PDF extracted successfully from {file_path}")
 
-    unique_skills = set()
-    unique_occupations = set()
+        process_cv_chain = process_cv_text_chain()
+        logger.info("CV text processing chain initialized")
 
-    all_retrieved_skills = {
-        'documents': [],
-        'embeddings': [],
-        'metadatas': [],
-        'ids': []
-    }
-    all_retrieved_occupations = {
-        'documents': [],
-        'embeddings': [],
-        'metadatas': [],
-        'ids': []
-    }
+        extracted_skills = process_cv_chain.invoke(input={"doc_type": "skills", "cv_text": input_text})
+        logger.info(f"Extracted skills: {extracted_skills}")
+
+        extracted_occupations = process_cv_chain.invoke(input={"doc_type": "occupations", "cv_text": input_text})
+        logger.info(f"Extracted occupations: {extracted_occupations}")
+
+        all_retrieved_skills = []
+        all_retrieved_occupations = []
+
+        for skill in extracted_skills.items:
+            try:
+                skill_embedding = embedding_ef.embed_query(text=skill.name)
+                retrieved_skill = query_faiss_index(skill_embedding, 'skill/competence', VECTORSTORE_MAX_RETRIEVED)
+                all_retrieved_skills.extend(retrieved_skill)
+            except Exception as e:
+                logger.error(f"Error retrieving skill {skill.name}: {str(e)}")
+                logger.error(traceback.format_exc())
+
+        for occupation in extracted_occupations.items:
+            try:
+                occupation_embedding = embedding_ef.embed_query(text=occupation.name)
+                retrieved_occupation = query_faiss_index(occupation_embedding, 'occupation', VECTORSTORE_MAX_RETRIEVED)
+                all_retrieved_occupations.extend(retrieved_occupation)
+            except Exception as e:
+                logger.error(f"Error retrieving occupation {occupation.name}: {str(e)}")
+                logger.error(traceback.format_exc())
+
+        logger.info(f"Retrieved {len(all_retrieved_skills)} skills and {len(all_retrieved_occupations)} occupations")
+
+        skills_context = "\n".join([f"{item['id']}|{item['document']}" for item in all_retrieved_skills])
+        occupations_context = "\n".join([f"{item['id']}|{item['document']}" for item in all_retrieved_occupations])
+
+        skills_chain = grading_chain("skills")
+        skills_result = skills_chain.invoke({
+            "question": input_text,
+            "context": skills_context,
+            "max_picks": LLM_MAX_PICKS[0],
+            "doc_type": "skills"
+        })
+        logger.info(f"Skills grading result: {skills_result}")
+
+        occupations_chain = grading_chain("occupations")
+        occupations_result = occupations_chain.invoke({
+            "question": input_text,
+            "context": occupations_context,
+            "max_picks": LLM_MAX_PICKS[1],
+            "doc_type": "occupations"
+        })
+        logger.info(f"Occupations grading result: {occupations_result}")
+        graded_skills = [GradedItem(id=item['id'], item=item['item'], relevance=item['relevance']) for item in
+                         skills_result["items"]]
+        graded_occupations = [GradedItem(id=item['id'], item=item['item'], relevance=item['relevance']) for item in
+                              occupations_result["items"]]
+
+        # Create a list of graded skills ids based on GradedItem
+        graded_skills_ids = [item.id for item in graded_skills]
+
+        # Create a list of graded occupation ids based on GradedItem
+        graded_occupations_ids = [item.id for item in graded_occupations]
+
+        similar_skills = get_similar_documents_faiss(graded_skills_ids, 'skill/competence', NB_SUGGESTED_SKILLS)
+        logger.info(f"Found {len(similar_skills)} similar skills")
+
+        similar_occupations = get_similar_documents_faiss(graded_occupations_ids, 'occupation',
+                                                          NB_SUGGESTED_OCCUPATIONS)
+        logger.info(f"Found {len(similar_occupations)} similar occupations")
 
 
-    for i, summary in enumerate(summaries):
-        items = summary['summary']
-        print(f"items : {items}")
-        query = ', '.join(items)
-        print(f"query : {query}")
+        suggestion_response = SuggestionResponse(
+            suggested_skills_ids=[doc['id'] for doc in similar_skills],
+            suggested_occupations_ids=[doc['id'] for doc in similar_occupations]
+        )
 
-        # Retrieve docs for each experiences
-        # TODO determine distribution number of doc for each summary
-        retrieved_skills = similarity_search_skills(query, collection, model, top_k=2)
-        retrieved_occupations = similarity_search_occupations(query, collection, model, top_k=1)
+        return ProcessResponse(
+            graded_skills=graded_skills,
+            graded_occupations=graded_occupations,
+            suggestions=suggestion_response
+        )
 
-        # Formating
-        all_retrieved_skills['documents'].extend(retrieved_skills['documents'])
-        all_retrieved_skills['embeddings'].extend(retrieved_skills['embeddings'])
-        all_retrieved_skills['metadatas'].extend(retrieved_skills['metadatas'])
-        all_retrieved_skills['ids'].extend(retrieved_skills['ids'])
-
-        all_retrieved_occupations['documents'].extend(retrieved_occupations['documents'])
-        all_retrieved_occupations['embeddings'].extend(retrieved_occupations['embeddings'])
-        all_retrieved_occupations['metadatas'].extend(retrieved_occupations['metadatas'])
-        all_retrieved_occupations['ids'].extend(retrieved_occupations['ids'])
-
-        unique_skills.update(retrieved_skills['ids'][0] if 'ids' in retrieved_skills else [])
-        unique_occupations.update(retrieved_occupations['ids'][0] if 'ids' in retrieved_occupations else [])
-
-    # Get similar doc based on the retrieved ones
-    similar_skills = get_similar_documents(collection, all_retrieved_skills, 'skill/competence', NB_SUGGESTED_SKILLS)
-    similar_occupations = get_similar_documents(collection, all_retrieved_occupations, 'occupation', NB_SUGGESTED_OCCUPATIONS)
-
-    similar_skills_ids = set([doc['ids'] for doc in similar_skills])
-    similar_occupations_ids = set([doc['ids'] for doc in similar_occupations])
-
-
-    return ProcessResponse(
-        selected_skills_ids=list(unique_skills),
-        selected_occupations_ids=list(unique_occupations),
-        suggested_skills_ids=list(similar_skills_ids),
-        suggested_occupations_ids=list(similar_occupations_ids)
-    )
+    except Exception as e:
+        logger.error(f"Error in process_cv: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise
