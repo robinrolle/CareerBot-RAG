@@ -15,7 +15,7 @@ const SearchBar = ({ options, value, onChange, placeholder }) => {
     const handleSelect = (event, newValue) => {
         if (newValue) {
             onChange([...value, newValue.value]);
-            setInputValue('');  
+            setInputValue('');
         }
     };
 
@@ -37,7 +37,7 @@ const SearchBar = ({ options, value, onChange, placeholder }) => {
             )}
             className="mb-4 w-full"
             disableClearable
-            value={null} // Clear text after selections
+            value={null}
         />
     );
 };

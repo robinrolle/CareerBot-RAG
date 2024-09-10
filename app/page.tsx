@@ -16,16 +16,16 @@ export default function Home() {
   const [analyzed, setAnalyzed] = useState(false);
 
   const [skillsOptions, setSkillsOptions] = useState([]);
-  const [selectedSkills, setSelectedSkills] = useState([]);
+  const [skillsData, setSkillsData] = useState([]);
+  const [initialSkillsData, setInitialSkillsData] = useState([]); 
   const [suggestedSkills, setSuggestedSkills] = useState([]);
-  const [responseSkills, setResponseSkills] = useState([]);
-  const [responseSuggestedSkills, setResponseSuggestedSkills] = useState([]);
+  const [initialSuggestedSkills, setInitialSuggestedSkills] = useState([]); 
 
   const [occupationsOptions, setOccupationsOptions] = useState([]);
-  const [selectedOccupations, setSelectedOccupations] = useState([]);
+  const [occupationsData, setOccupationsData] = useState([]);
+  const [initialOccupationsData, setInitialOccupationsData] = useState([]); 
   const [suggestedOccupations, setSuggestedOccupations] = useState([]);
-  const [responseOccupations, setResponseOccupations] = useState([]);
-  const [responseSuggestedOccupations, setResponseSuggestedOccupations] = useState([]);
+  const [initialSuggestedOccupations, setInitialSuggestedOccupations] = useState([]);
 
   const [activeTab, setActiveTab] = useState('skills');
 
@@ -65,11 +65,9 @@ export default function Home() {
   const handleFileRemove = () => {
     setUploadedFilename(null);
     setAnalyzed(false);
-    setResponseSkills([]);
-    setSelectedSkills([]);
+    setSkillsData([]);
     setSuggestedSkills([]);
-    setResponseOccupations([]);
-    setSelectedOccupations([]);
+    setOccupationsData([]);
     setSuggestedOccupations([]);
   };
 
@@ -79,156 +77,132 @@ export default function Home() {
     setLoading(true);
 
     try {
-        const response = await fetch(`http://localhost:8000/process?filename=${uploadedFilename}`, {
-            method: 'POST'
-        });
+      const response = await fetch(`http://localhost:8000/process?filename=${uploadedFilename}`, {
+        method: 'POST'
+      });
 
-        if (!response.ok) {
-            throw new Error('Failed to process the file');
-        }
+      if (!response.ok) {
+        throw new Error('Failed to process the file');
+      }
 
-        const data = await response.json();
+      const data = await response.json();
 
-        // Compétences extraites et notées
-        const gradedSkills = data.graded_skills.map(skill => skill.id);
-        setResponseSkills(gradedSkills);
-        setSelectedSkills(gradedSkills);
+      // Update current and initial states
+      setSkillsData(data.graded_skills);
+      setInitialSkillsData(data.graded_skills);
+      setSuggestedSkills(data.suggestions.suggested_skills_ids);
+      setInitialSuggestedSkills(data.suggestions.suggested_skills_ids);
 
-        // Suggestions de compétences
-        const suggestedSkills = data.suggestions.suggested_skills_ids || [];
-        setSuggestedSkills(suggestedSkills);
-        setResponseSuggestedSkills(suggestedSkills);
+      setOccupationsData(data.graded_occupations);
+      setInitialOccupationsData(data.graded_occupations);
+      setSuggestedOccupations(data.suggestions.suggested_occupations_ids);
+      setInitialSuggestedOccupations(data.suggestions.suggested_occupations_ids);
 
-        // Professions extraites et notées
-        const gradedOccupations = data.graded_occupations.map(occupation => occupation.id);
-        setResponseOccupations(gradedOccupations);
-        setSelectedOccupations(gradedOccupations);
-
-        // Suggestions de professions
-        const suggestedOccupations = data.suggestions.suggested_occupations_ids || [];
-        setSuggestedOccupations(suggestedOccupations);
-        setResponseSuggestedOccupations(suggestedOccupations);
-
-        setAnalyzed(true);
+      setAnalyzed(true);
     } catch (error) {
-        console.error('Error during processing:', error);
+      console.error('Error during processing:', error);
     } finally {
-        setLoading(false);
-    }
-};
-
-
-  const handleTabChange = (tabKey) => {
-    setActiveTab(tabKey);
-  };
-
-  // Function to handle removing a skill or occupation from selections or suggestions
-  const removeOption = (option, isSelection, type) => {
-    if (type === 'skills') {
-      if (isSelection) {
-        setSelectedSkills(prevSelected =>
-            prevSelected.filter(skill => skill !== option.value)
-        );
-      } else {
-        setSuggestedSkills(prevSuggested =>
-            prevSuggested.filter(skill => skill !== option.value)
-        );
-      }
-    } else if (type === 'occupations') {
-      if (isSelection) {
-        setSelectedOccupations(prevSelected =>
-            prevSelected.filter(occupation => occupation !== option.value)
-        );
-      } else {
-        setSuggestedOccupations(prevSuggested =>
-            prevSuggested.filter(occupation => occupation !== option.value)
-        );
-      }
-    }
-  };
-
-  const resetSelections = (type) => {
-    if (type === 'skills') {
-      setSelectedSkills(responseSkills);
-      setSuggestedSkills(responseSuggestedSkills);
-    } else if (type === 'occupations') {
-      setSelectedOccupations(responseOccupations);
-      setSuggestedOccupations(responseSuggestedOccupations);
+      setLoading(false);
     }
   };
 
   const handleSkillsChange = (newSkills) => {
-    setSelectedSkills(newSkills);
-    // Remove new selected skill from suggestion if chosen by search bar and present in suggestion
-    const updatedSuggestions = suggestedSkills.filter(skill => !newSkills.includes(skill));
-    setSuggestedSkills(updatedSuggestions);
+    setSkillsData(prevSkills => {
+      const existingSkills = prevSkills.filter(skill => newSkills.includes(skill.id));
+      const addedSkills = newSkills
+        .filter(id => !prevSkills.some(skill => skill.id === id))
+        .map(id => ({ id, item: skillsOptions.find(opt => opt.value === id)?.label || id, relevance: null }));
+      return [...existingSkills, ...addedSkills];
+    });
+    // Mise à jour des suggestions
+    setSuggestedSkills(prevSuggestions => prevSuggestions.filter(id => !newSkills.includes(id)));
   };
 
   const handleOccupationsChange = (newOccupations) => {
-    setSelectedOccupations(newOccupations);
-    // Remove new selected occupation from suggestion if chosen by search bar and present in suggestion
-    const updatedSuggestions = suggestedOccupations.filter(occupation => !newOccupations.includes(occupation));
-    setSuggestedOccupations(updatedSuggestions);
+    setOccupationsData(prevOccupations => {
+      const existingOccupations = prevOccupations.filter(occupation => newOccupations.includes(occupation.id));
+      const addedOccupations = newOccupations
+        .filter(id => !prevOccupations.some(occupation => occupation.id === id))
+        .map(id => ({ id, item: occupationsOptions.find(opt => opt.value === id)?.label || id, relevance: null }));
+      return [...existingOccupations, ...addedOccupations];
+    });
+    // Mise à jour des suggestions
+    setSuggestedOccupations(prevSuggestions => prevSuggestions.filter(id => !newOccupations.includes(id)));
+  };
+
+  const removeSkill = (skillId) => {
+    setSkillsData(prevSkills => prevSkills.filter(skill => skill.id !== skillId));
+  };
+
+  const removeOccupation = (occupationId) => {
+    setOccupationsData(prevOccupations => prevOccupations.filter(occupation => occupation.id !== occupationId));
+  };
+
+  const resetSelections = (type) => {
+    if (type === 'skills') {
+      setSkillsData([...initialSkillsData]);
+      setSuggestedSkills([...initialSuggestedSkills]);
+    } else if (type === 'occupations') {
+      setOccupationsData([...initialOccupationsData]);
+      setSuggestedOccupations([...initialSuggestedOccupations]);
+    }
+  };
+
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
   };
 
   const handleSuggestSkills = async () => {
     setLoading(true);
   
     try {
-        const response = await fetch('http://localhost:8000/suggestions/skills', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(selectedSkills),
-        });
+      const response = await fetch('http://localhost:8000/suggestions/skills', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(skillsData.map(skill => skill.id)),
+      });
   
-        if (!response.ok) {
-            throw new Error('Failed to fetch skill suggestions');
-        }
+      if (!response.ok) {
+        throw new Error('Failed to fetch skill suggestions');
+      }
   
-        const data = await response.json();
-        const suggestedSkillIds = data.suggested_skills_ids || [];
-  
-        setSuggestedSkills(suggestedSkillIds);
+      const data = await response.json();
+      setSuggestedSkills(data.suggested_skills_ids || []);
   
     } catch (error) {
-        console.error('Error fetching skill suggestions:', error);
+      console.error('Error fetching skill suggestions:', error);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
+  const handleSuggestOccupations = async () => {
+    setLoading(true);
 
-  
-const handleSuggestOccupations = async () => {
-  setLoading(true);
-
-  try {
+    try {
       const response = await fetch('http://localhost:8000/suggestions/occupations', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(selectedOccupations),
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(occupationsData.map(occupation => occupation.id)),
       });
 
       if (!response.ok) {
-          throw new Error('Failed to fetch occupation suggestions');
+        throw new Error('Failed to fetch occupation suggestions');
       }
 
       const data = await response.json();
-      const suggestedOccupationsIds = data.suggested_occupations_ids || [];
+      setSuggestedOccupations(data.suggested_occupations_ids || []);
 
-      setSuggestedOccupations(suggestedOccupationsIds);
-
-  } catch (error) {
+    } catch (error) {
       console.error('Error fetching occupation suggestions:', error);
-  } finally {
+    } finally {
       setLoading(false);
-  }
-};
-
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -266,13 +240,7 @@ const handleSuggestOccupations = async () => {
               onClick={handleSubmit}
               disabled={loading || analyzed}
             >
-              {loading ? (
-                <>
-                  Analyzing...
-                </>
-              ) : (
-                'Analyze'
-              )}
+              {loading ? 'Analyzing...' : 'Analyze'}
             </button>
           )}
         </div>
@@ -293,65 +261,48 @@ const handleSuggestOccupations = async () => {
 
             {activeTab === 'skills' && (
               <div className="skills-container w-full">
-
                 <SelectionsSection
                   title="Identified"
-                  selections={selectedSkills}
+                  selections={skillsData}
                   options={skillsOptions}
                   placeholder="Select skills..."
                   onChange={handleSkillsChange}
-                  onRemove={(option, isSelection) => removeOption(option, isSelection, 'skills')}
+                  onRemove={removeSkill}
                   onReset={() => resetSelections('skills')}
                 />
                 <hr className="mb-4 mt-4"/>
-
                 <SuggestionsSection
                   title="Suggestions"
                   suggestions={suggestedSkills}
                   options={skillsOptions}
                   onSelect={(selectedOption) => {
-                    // Add to selections
-                    const newSelectedSkills = [...selectedSkills, selectedOption.value];
-                    setSelectedSkills(newSelectedSkills);
-
-                    // Remove from suggestion
-                    setSuggestedSkills(suggestedSkills.filter(skill => skill !== selectedOption.value));
+                    handleSkillsChange([...skillsData.map(skill => skill.id), selectedOption.value]);
                   }}
                   onSuggest={handleSuggestSkills}
-                  
                 />
               </div>
             )}
 
             {activeTab === 'occupations' && (
               <div className="occupations-container w-full">
-
                 <SelectionsSection
                   title="Identified"
-                  selections={selectedOccupations}
+                  selections={occupationsData}
                   options={occupationsOptions}
                   placeholder="Select occupations..."
                   onChange={handleOccupationsChange}
-                  onRemove={(option, isSelection) => removeOption(option, isSelection, 'occupations')}
+                  onRemove={removeOccupation}
                   onReset={() => resetSelections('occupations')}
                 />
                 <hr className="mb-4 mt-4"/>
-
                 <SuggestionsSection
                   title="Suggestions"
                   suggestions={suggestedOccupations}
                   options={occupationsOptions}
                   onSelect={(selectedOption) => {
-                    // Add to selections
-                    const newSelectedOccupations = [...selectedOccupations, selectedOption.value];
-                    setSelectedOccupations(newSelectedOccupations);
-
-                    // Remove from suggestion
-                    setSuggestedOccupations(suggestedOccupations.filter(occupation => occupation !== selectedOption.value));
+                    handleOccupationsChange([...occupationsData.map(occupation => occupation.id), selectedOption.value]);
                   }}
-
                   onSuggest={handleSuggestOccupations}
-                  
                 />
               </div>
             )}
