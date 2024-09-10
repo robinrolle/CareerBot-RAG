@@ -184,24 +184,28 @@ async def process_cv(file_path: str) -> ProcessResponse:
             "doc_type": "occupations"
         })
         logger.info(f"Occupations grading result: {occupations_result}")
-        graded_skills = [GradedItem(id=item['id'], item=item['item'], relevance=item['relevance']) for item in
-                         skills_result["items"]]
-        graded_occupations = [GradedItem(id=item['id'], item=item['item'], relevance=item['relevance']) for item in
-                              occupations_result["items"]]
 
-        # Create a list of graded skills ids based on GradedItem
+        # Créer les objets GradedItem pour les compétences et les occupations
+        graded_skills = [GradedItem(id=item['id'], item=item['item'], relevance=item['relevance']) for item in skills_result["items"]]
+        graded_occupations = [GradedItem(id=item['id'], item=item['item'], relevance=item['relevance']) for item in occupations_result["items"]]
+
+        # Trier les graded_skills et graded_occupations par relevance
+        def sort_by_relevance(item):
+            relevance_order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
+            return relevance_order.get(item.relevance, 3)
+
+        graded_skills.sort(key=sort_by_relevance)
+        graded_occupations.sort(key=sort_by_relevance)
+
+        # Créer une liste des IDs des compétences et des occupations classées
         graded_skills_ids = [item.id for item in graded_skills]
-
-        # Create a list of graded occupation ids based on GradedItem
         graded_occupations_ids = [item.id for item in graded_occupations]
 
         similar_skills = get_similar_documents_faiss(graded_skills_ids, 'skill/competence', NB_SUGGESTED_SKILLS)
         logger.info(f"Found {len(similar_skills)} similar skills")
 
-        similar_occupations = get_similar_documents_faiss(graded_occupations_ids, 'occupation',
-                                                          NB_SUGGESTED_OCCUPATIONS)
+        similar_occupations = get_similar_documents_faiss(graded_occupations_ids, 'occupation', NB_SUGGESTED_OCCUPATIONS)
         logger.info(f"Found {len(similar_occupations)} similar occupations")
-
 
         suggestion_response = SuggestionResponse(
             suggested_skills_ids=[doc['id'] for doc in similar_skills],
