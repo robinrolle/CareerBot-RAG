@@ -90,10 +90,14 @@ def grading_chain(doc_type):
 
 def get_similar_documents_faiss(ids: List[str], doc_type: str, n_suggest: int) -> List[Dict]:
     used_ids = set(ids)
-    n_old = len(used_ids)
-    n_new = 2 * int(np.ceil(n_suggest / n_old))
+    n_results_per_embedding = 25
+    total_embeddings = len(ids)
 
-    # Retrieve the embeddings that correspond to the ids using faiss
+    # Nombre de suggestions équilibré entre les embeddings
+    suggestions_per_embedding = n_suggest // total_embeddings
+    extra_suggestions = n_suggest % total_embeddings
+
+    # Récupérer les embeddings correspondant aux ids via FAISS
     embeddings = []
     for id in ids:
         idx = faiss_metadata['ids'].index(id)
@@ -102,30 +106,40 @@ def get_similar_documents_faiss(ids: List[str], doc_type: str, n_suggest: int) -
 
     embeddings = np.array(embeddings).astype('float32')
 
-    if len(embeddings) < 2:
-        raise ValueError("Pas assez d'embeddings pour calculer les distances.")
-
-    distances, indices = faiss_index.search(embeddings, n_old + n_new)
+    distances, indices = faiss_index.search(embeddings, n_results_per_embedding)
 
     new_docs = []
     for doc_idx, (distances_row, indices_row) in enumerate(zip(distances, indices)):
-        for dist, idx in zip(distances_row, indices_row):
-            if idx != -1:  # FAISS returns -1 for invalid results
-                doc = faiss_metadata['documents'][idx]
-                doc_id = faiss_metadata['ids'][idx]
-                if doc_id not in used_ids:
-                    new_docs.append({
-                        'document': doc,
-                        'id': doc_id,
-                        'distance': dist
-                    })
-                    used_ids.add(doc_id)
+        count = suggestions_per_embedding + (
+            1 if doc_idx < extra_suggestions else 0)  # Répartir également les suggestions supplémentaires
+        suggestions_added = 0
 
+        for dist, idx in zip(distances_row, indices_row):
+            doc = faiss_metadata['documents'][idx]
+            doc_id = faiss_metadata['ids'][idx]
+
+            # Ajouter le document s'il n'est pas un doublon
+            if doc_id not in used_ids:
+                new_docs.append({
+                    'document': doc,
+                    'id': doc_id,
+                    'distance': dist
+                })
+                used_ids.add(doc_id)
+                suggestions_added += 1
+
+            if suggestions_added >= count:  # Limiter les suggestions par embedding
+                break
+
+    # Trier les documents par distance pour les suggestions finales
     new_docs.sort(key=lambda x: x['distance'])
 
-    final_docs = new_docs[:n_suggest]
+    final_docs = new_docs[:n_suggest + 1]
+
+    logger.info(f"Found {len(final_docs)} similar {doc_type}")
 
     return final_docs
+
 
 async def process_cv(file_path: str) -> ProcessResponse:
     try:
@@ -203,9 +217,11 @@ async def process_cv(file_path: str) -> ProcessResponse:
 
         similar_skills = get_similar_documents_faiss(graded_skills_ids, 'skill/competence', NB_SUGGESTED_SKILLS)
         logger.info(f"Found {len(similar_skills)} similar skills")
+        print(similar_skills)
 
         similar_occupations = get_similar_documents_faiss(graded_occupations_ids, 'occupation', NB_SUGGESTED_OCCUPATIONS)
         logger.info(f"Found {len(similar_occupations)} similar occupations")
+        print(similar_occupations)
 
         suggestion_response = SuggestionResponse(
             suggested_skills_ids=[doc['id'] for doc in similar_skills],
