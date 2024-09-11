@@ -8,27 +8,29 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
             case 'HIGH':
                 return 'bg-green-500';
             case 'MEDIUM':
-                return 'bg-yellow-500';
+                return 'bg-blue-500';
             case 'LOW':
-                return 'bg-red-500';
+                return 'bg-yellow-500';
             default:
                 return 'bg-gray-500';
         }
     };
 
     const renderColorLegend = () => (
-        <div className="flex items-center space-x-4 mb-2">
-            <span className="text-sm font-medium">Relevance:</span>
-            {[
-                { color: 'bg-green-500', label: 'High' },
-                { color: 'bg-yellow-500', label: 'Medium' },
-                { color: 'bg-red-500', label: 'Low' },
-            ].map(({ color, label }) => (
-                <div key={label} className="flex items-center">
-                    <span className={`inline-block w-2 h-2 rounded-full mr-1 ${color}`}></span>
-                    <span className="text-xs">{label}</span>
-                </div>
-            ))}
+        <div className="flex items-center space-x-4 mb-4">
+            <span className="text-m font-medium flex items-center">confidence</span>
+            <div className="flex space-x-4 items-center">
+                {[
+                    { color: 'bg-green-500', label: 'High' },
+                    { color: 'bg-blue-500', label: 'Medium' },
+                    { color: 'bg-yellow-500', label: 'Low' },
+                ].map(({ color, label }) => (
+                    <div key={label} className="flex items-center space-x-1">
+                        <span className={`inline-block w-2 h-2 rounded-full ${color}`}></span>
+                        <span className="text-xs">{label}</span>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 
@@ -38,7 +40,7 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
         }
 
         return (
-            <div className="flex gap-2 flex-wrap mb-4 ">
+            <div className="flex gap-2 flex-wrap">
                 {selections.map(selection => {
                     const option = options.find(opt => opt.value === selection.id);
                     const dotColor = getRelevanceColor(selection.relevance);
@@ -73,7 +75,7 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
                             Reset
                         </button>
                     </div>
-                    {renderColorLegend()}
+                    
                 </CardHeader>
                 <CardBody className="mt-4">
                     <div className="selections-container">
@@ -83,6 +85,7 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
                             onChange={(newValues) => onChange(newValues)}
                             value={selections.map(s => s.id)}
                         />
+                        {renderColorLegend()}
                         <div>{renderTags()}</div>
                     </div>
                 </CardBody>
