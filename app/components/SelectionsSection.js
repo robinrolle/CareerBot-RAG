@@ -12,7 +12,7 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
             case 'LOW':
                 return 'bg-yellow-500';
             default:
-                return 'bg-gray-500';
+                return '';
         }
     };
 
