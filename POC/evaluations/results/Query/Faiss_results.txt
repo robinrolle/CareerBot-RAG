@@ -1,0 +1,101 @@
+Top 25 results (Time seconds 0.005000) :
+Rank 1:
+Document: accountant | Accountants review and analyse financial statements, budgets, financial reports, and business plans in order to check for irregularities resulting from error or fraud, and provide their clients with financial advice in matters such as financial forecasting and risk analysis. They may audit financial data, resolve insolvency cases, prepare tax returns and provide other tax-related advice in reference to current legislation.
+Distance: 1.0435378551483154
+---
+Rank 2:
+Document: maintain professional administration | File and organise professional administration documents comprehensively, keep customer records, fill in forms or log books and prepare documents about company-related matter.
+Distance: 1.066190242767334
+---
+Rank 3:
+Document: perform clerical duties | Perform administrative tasks such as filing, typing up reports and maintaining mail correspondence.
+Distance: 1.0693862438201904
+---
+Rank 4:
+Document: monitor financial accounts | Handle financial administration of your department, keep the costs down to only necessary expenses and maximise the revenues of your organisation.
+Distance: 1.0755305290222168
+---
+Rank 5:
+Document: auditing clerk | Auditing clerks collect and examine financial data, such as inventory transactions, for organisations and companies and ensure they are accurate, properly maintained, and that they add up. They review and evaluate the numbers in databases and documents and consult and assist the source of the transaction if necessary, which includes accountants, managers or other clerks.
+Distance: 1.077851414680481
+---
+Rank 6:
+Document: accounting manager | Accounting managers assume responsibility for all accounting activities relating to financial reporting. They develop and maintain accounting principles and procedures to ensure timely and accurate financial statements, supervise accounting staff and manage the accounting activities within the appropriate time frame and budget.
+Distance: 1.0864064693450928
+---
+Rank 7:
+Document: handle financial transactions | Administer currencies, financial exchange activities, deposits as well as company and voucher payments. Prepare and manage guest accounts and take payments by cash, credit card and debit card.
+Distance: 1.0864408016204834
+---
+Rank 8:
+Document: manage accounts | Manage the accounts and financial activities of an organisation, supervising that all the documents are correctly maintained, that all the information and calculations are correct, and that proper decisions are being made.
+Distance: 1.0945076942443848
+---
+Rank 9:
+Document: manage the general ledger | Enter data and revise the adequate maintenance of general ledgers in order to follow up on the financial transactions of the company, and other non routine transactions such as depreciation.
+Distance: 1.1091489791870117
+---
+Rank 10:
+Document: accounting analyst | Accounting analysts evaluate the financial statements of clients, usually companies, which include the income sheet, the balance sheet, the statement of cash flows and additional notes to other financial statements. They interpret and implement new accounting systems and accounting procedures and will analyse and determine if the proposed systems conform to accounting regulations and meet user information requirements.
+Distance: 1.1126797199249268
+---
+Rank 11:
+Document: perform forensic accounting | Perform audits and evaluations of financial information, accounts, financial products, and stewardship of companies. Exert financial investigations with different emphasis such as insurance claims, fraud, and anti-money laundering.
+Distance: 1.1148500442504883
+---
+Rank 12:
+Document: use accounting systems | Employ accounting systems for recording and managing the accounts, obligations, and rights that the company possesses. Utilise these systems for accounting operations, financial analysis, and preparation of financial statements.
+Distance: 1.1161925792694092
+---
+Rank 13:
+Document: supervise accounting operations | Coordinate, commission, and monitor operations in accounting departments in order to ensure the accurate record and eventual reporting of the financial operations of the company.
+Distance: 1.1277503967285156
+---
+Rank 14:
+Document: manage writing administration | Manage the financial and administrative side of writing including making up budgets, maintaining financial records, checking contracts, etc.
+Distance: 1.1308506727218628
+---
+Rank 15:
+Document: accounting assistant | Accounting assistants record and report ticketing accounting situations to the accountant they work with, verify deposits and prepare daily reports and income. They arrange authorised refund vouchers, maintain the returned check accounts and communicate with ticketing managers concerning about any  issues with ticketing systems.
+Distance: 1.131606101989746
+---
+Rank 16:
+Document: assist with personal administration issues | Assist individuals with administration activities such as shopping, banking or paying bills.
+Distance: 1.1387646198272705
+---
+Rank 17:
+Document: public finance accountant | Public finance accountants head the treasury department of a governmental institution. They manage the institution's financial administration, expenditure and income generation, and compliance with taxation and other financial legislation. They perform administrative duties to ensure record keeping, develop plans for budget management and perform financial forecasts.
+Distance: 1.1459460258483887
+---
+Rank 18:
+Document: bookkeeper | Bookkeepers record and assemble the day-to-day financial transactions of an organisation or company, consisting usually of sales, purchases, payments and receipts. They ensure all financial transactions are documented in the appropriate (day) book and general ledger, and that they are balanced out. Bookkeepers prepare the recorded books and ledgers with financial transactions for an accountant to then analyse balance sheets and income statements.
+Distance: 1.1500062942504883
+---
+Rank 19:
+Document: explain accounting records | Provide additional explanation and disclosure to staff, vendors, auditors, and to any other instance about the way accounts were recorded and treated in the financial records.
+Distance: 1.1504168510437012
+---
+Rank 20:
+Document: manage financial transactions of fuel station | Report fuel transactions and supplies purchases. Operate computerised cash registers. Process credit card transactions and cash purchases. Compose balance sheets. Operate cash drawers and carry out cash deposits.
+Distance: 1.1506246328353882
+---
+Rank 21:
+Document: maintain financial records | Keep track of and finalise all formal documents representing the financial transactions of a business or project.
+Distance: 1.1585452556610107
+---
+Rank 22:
+Document: tax clerk | Tax clerks collect financial information in order to prepare accounting and tax documents. They also perform clerical duties.
+Distance: 1.16795015335083
+---
+Rank 23:
+Document: billing clerk | Billing clerks create credit memos, invoices and monthly customer statements and issue them to customers by all necessary means. They update customer files accordingly.
+Distance: 1.171126365661621
+---
+Rank 24:
+Document: check accounting records | Revise the accounting records of the quarter and year and ensure that the accounting information reflects with accuracy the financial transactions of the company.
+Distance: 1.1744747161865234
+---
+Rank 25:
+Document: manage clients' money matters | Pay the clients' bills and make sure that all other financial matters are properly managed.
+Distance: 1.1777994632720947
+---
