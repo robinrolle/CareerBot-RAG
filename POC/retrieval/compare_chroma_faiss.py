@@ -53,7 +53,6 @@ def query_faiss_index(index, query_embedding, top_k=5):
 
 
 def query_chroma_collection(collection, query_embedding, top_k=5):
-
     # Mesuring time
     start_time = time.time()
     results = collection.query(
@@ -64,6 +63,7 @@ def query_chroma_collection(collection, query_embedding, top_k=5):
 
     search_time = end_time - start_time
     return results, search_time
+
 
 def main():
     collection_name = "text-embedding-3-small"
@@ -82,19 +82,21 @@ def main():
 
     print(f"Top {len(indices)} results (Time seconds {search_time:.6f}) :")
     for i, idx in enumerate(indices):
+        print(f"Rank {i + 1}:")
         print(f"Document: {metadata['documents'][idx]}")
         print(f"Distance: {distances[i]}")
         print("---")
 
-
     # Chroma DB
     client = chromadb.PersistentClient(path=DATABASE_DIR)
     chroma_collection = client.get_collection(collection_name)
-    # Quey Chroma
+
+    # Query Chroma
     results, search_time = query_chroma_collection(chroma_collection, query_embedding, top_k=25)
 
     print(f"Top {len(results['ids'][0])} results (Time seconds {search_time:.6f}) :")
     for i in range(len(results['ids'][0])):
+        print(f"Rank {i + 1}:")
         print(f"Document: {results['documents'][0][i]}")
         print(f"Distance: {results['distances'][0][i]}")
         print("---")
