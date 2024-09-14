@@ -160,7 +160,7 @@ async def process_cv(file_path: str) -> ProcessResponse:
         for skill in extracted_skills.items:
             try:
                 skill_embedding = embedding_ef.embed_query(text=skill.name)
-                retrieved_skill = query_faiss_index(skill_embedding, 'skill/competence', VECTORSTORE_MAX_RETRIEVED)
+                retrieved_skill = query_faiss_index(skill_embedding, 'skill/competence', NUMBER_DOC_PER_ITEM)
                 all_retrieved_skills.extend(retrieved_skill)
             except Exception as e:
                 logger.error(f"Error retrieving skill {skill.name}: {str(e)}")
@@ -169,7 +169,7 @@ async def process_cv(file_path: str) -> ProcessResponse:
         for occupation in extracted_occupations.items:
             try:
                 occupation_embedding = embedding_ef.embed_query(text=occupation.name)
-                retrieved_occupation = query_faiss_index(occupation_embedding, 'occupation', VECTORSTORE_MAX_RETRIEVED)
+                retrieved_occupation = query_faiss_index(occupation_embedding, 'occupation', NUMBER_DOC_PER_ITEM)
                 all_retrieved_occupations.extend(retrieved_occupation)
             except Exception as e:
                 logger.error(f"Error retrieving occupation {occupation.name}: {str(e)}")
