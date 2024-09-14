@@ -2,9 +2,8 @@ import os
 import uuid
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from .models import ProcessResponse, UploadResponse, SuggestionResponse, OccupationSuggestionResponse, SkillSuggestionResponse
+from .models import ProcessResponse, UploadResponse, OccupationSuggestionResponse, SkillSuggestionResponse
 from .utils import process_cv, get_similar_documents_faiss
-from .database import faiss_index, faiss_metadata
 from .config import NB_SUGGESTED_SKILLS, NB_SUGGESTED_OCCUPATIONS
 from typing import List
 import aiofiles

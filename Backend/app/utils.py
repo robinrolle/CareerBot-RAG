@@ -7,8 +7,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from .database import faiss_index, faiss_metadata
 from .templates import full_prompt
 import numpy as np
-from scipy.spatial.distance import pdist, squareform
-from .config import EMBEDDING_MODEL_NAME, GENERATION_MODEL_NAME, NB_SUGGESTED_SKILLS, NB_SUGGESTED_OCCUPATIONS, OPENAI_API_KEY, VECTORSTORE_MAX_RETRIEVED, LLM_MAX_PICKS
+from .config import EMBEDDING_MODEL_NAME, GENERATION_MODEL_NAME, NB_SUGGESTED_SKILLS, NB_SUGGESTED_OCCUPATIONS, OPENAI_API_KEY, NUMBER_DOC_PER_ITEM, LLM_MAX_PICKS
 from .models import ExtractedItems, GradedItem
 from langchain_core.runnables import RunnableSequence
 from langchain_core.output_parsers import JsonOutputParser
@@ -93,11 +92,11 @@ def get_similar_documents_faiss(ids: List[str], doc_type: str, n_suggest: int) -
     n_results_per_embedding = 25
     total_embeddings = len(ids)
 
-    # Nombre de suggestions équilibré entre les embeddings
+    # Calculate number of docs needed
     suggestions_per_embedding = n_suggest // total_embeddings
     extra_suggestions = n_suggest % total_embeddings
 
-    # Récupérer les embeddings correspondant aux ids via FAISS
+    # Get similar docs
     embeddings = []
     for id in ids:
         idx = faiss_metadata['ids'].index(id)
@@ -111,14 +110,14 @@ def get_similar_documents_faiss(ids: List[str], doc_type: str, n_suggest: int) -
     new_docs = []
     for doc_idx, (distances_row, indices_row) in enumerate(zip(distances, indices)):
         count = suggestions_per_embedding + (
-            1 if doc_idx < extra_suggestions else 0)  # Répartir également les suggestions supplémentaires
+            1 if doc_idx < extra_suggestions else 0)
         suggestions_added = 0
 
         for dist, idx in zip(distances_row, indices_row):
             doc = faiss_metadata['documents'][idx]
             doc_id = faiss_metadata['ids'][idx]
 
-            # Ajouter le document s'il n'est pas un doublon
+            # Add docs if not already used
             if doc_id not in used_ids:
                 new_docs.append({
                     'document': doc,
@@ -128,10 +127,10 @@ def get_similar_documents_faiss(ids: List[str], doc_type: str, n_suggest: int) -
                 used_ids.add(doc_id)
                 suggestions_added += 1
 
-            if suggestions_added >= count:  # Limiter les suggestions par embedding
+            if suggestions_added >= count:  # suggestion number limit
                 break
 
-    # Trier les documents par distance pour les suggestions finales
+    # Sort doc by relevance higher to lower
     new_docs.sort(key=lambda x: x['distance'])
 
     final_docs = new_docs[:n_suggest + 1]
@@ -199,11 +198,10 @@ async def process_cv(file_path: str) -> ProcessResponse:
         })
         logger.info(f"Occupations grading result: {occupations_result}")
 
-        # Créer les objets GradedItem pour les compétences et les occupations
+        # Create gradedItem objects
         graded_skills = [GradedItem(id=item['id'], item=item['item'], relevance=item['relevance']) for item in skills_result["items"]]
         graded_occupations = [GradedItem(id=item['id'], item=item['item'], relevance=item['relevance']) for item in occupations_result["items"]]
 
-        # Trier les graded_skills et graded_occupations par relevance
         def sort_by_relevance(item):
             relevance_order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
             return relevance_order.get(item.relevance, 3)
@@ -211,17 +209,16 @@ async def process_cv(file_path: str) -> ProcessResponse:
         graded_skills.sort(key=sort_by_relevance)
         graded_occupations.sort(key=sort_by_relevance)
 
-        # Créer une liste des IDs des compétences et des occupations classées
+        # Create a list out of the sorted items
         graded_skills_ids = [item.id for item in graded_skills]
         graded_occupations_ids = [item.id for item in graded_occupations]
 
         similar_skills = get_similar_documents_faiss(graded_skills_ids, 'skill/competence', NB_SUGGESTED_SKILLS)
         logger.info(f"Found {len(similar_skills)} similar skills")
-        print(similar_skills)
+
 
         similar_occupations = get_similar_documents_faiss(graded_occupations_ids, 'occupation', NB_SUGGESTED_OCCUPATIONS)
         logger.info(f"Found {len(similar_occupations)} similar occupations")
-        print(similar_occupations)
 
         suggestion_response = SuggestionResponse(
             suggested_skills_ids=[doc['id'] for doc in similar_skills],
