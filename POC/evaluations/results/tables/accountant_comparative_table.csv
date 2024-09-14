@@ -1,0 +1,7 @@
+source,HyDe,HyDe,Hybrid Search,Hybrid Search,Naive,Naive,Query Decomposition,Query Decomposition
+,Occupations,Skills,Occupations,Skills,Occupations,Skills,Occupations,Skills
+embedding_model,,,,,,,,
+intfloat/e5-large-v2,7.0,8.0,8.0,9.0,9.0,8.0,5.0,8.0
+mixedbread-ai/mxbai-embed-large-v1,6.0,7.0,5.0,7.0,5.0,11.0,6.0,8.0
+text-embedding-3-large,12.0,8.0,7.0,8.0,10.0,10.0,6.0,6.0
+text-embedding-3-small,8.0,13.0,8.0,8.0,5.0,11.0,9.0,10.0
