@@ -1,0 +1,30 @@
+/* FileUpload.css */
+
+.filepond--drop-label {
+    color: black;
+    font-size: 16px;
+}
+
+.filepond--label-action {
+    text-decoration-color: #3B82F6;
+    color: #3B82F6;
+    cursor: pointer;
+}
+
+.filepond--panel-root {
+    border-radius: 2em;
+    background-color: white;
+    height: 2em;
+}
+
+.filepond--item-panel {
+    background-color: #595e68;
+}
+
+.filepond--drip-blob {
+    background-color: #3B82F6;
+}
+
+.filepond--file-action-button {
+    cursor: pointer;
+}

@@ -1,0 +1,33 @@
+.customTabs {
+    display: flex;
+    padding-bottom: 1rem;
+    margin-top: 1rem;
+}
+
+.customTab {
+    padding: 0.5rem 1rem;
+    margin: 0 0.5rem 0 0;
+    /* Space between tabs */
+    background-color: white;
+    /* Light background */
+    color: #374151;
+    /* Dark gray text */
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    /* Initial transparent border */
+}
+
+.customTab:hover {
+    background-color: #e5e7eb;
+    /* Slightly darker on hover */
+    cursor: pointer;
+}
+
+.customTab[data-selected='true'] {
+    background-color: white;
+    color: #3b82f6;
+    /* Blue */
+    font-weight: bold;
+    border-bottom: 2px solid #3b82f6;
+    /* Blue border underneath */
+}
