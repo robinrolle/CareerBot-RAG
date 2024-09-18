@@ -12,12 +12,7 @@ CareerBot-RAG is a project that analyzes CVs and provides skill and occupation s
 
 ### Backend
 
-1. Navigate to the Backend directory:
-   ```
-   cd Backend
-   ```
-
-2. Install Python dependencies:
+1. Install Python dependencies:
    ```
    pip install -r requirements.txt
    ```
