@@ -38,23 +38,26 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
         if (selections.length === 0) {
             return <div className="text-gray-500 mb-4">No selections</div>;
         }
-
+    
         return (
             <div className="flex gap-2 flex-wrap">
-                {selections.map(selection => {
+                {selections.map((selection, index) => {
                     const option = options.find(opt => opt.value === selection.id);
                     const dotColor = getRelevanceColor(selection.relevance);
+                    const label = selection.relevance
+                        ? selection.item.charAt(0).toUpperCase() + selection.item.slice(1)
+                        : selection.item;
                     return (
                         <Chip
-                            key={selection.id}
-                            onClose={() => onRemove(selection.id)}
+                            key={`${selection.id}-${index}`}
+                            onClose={() => onRemove(selection.id, index)}
                             classNames={{
                                 base: "flex items-center px-3 py-1 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-full shadow cursor-default",
                                 closeButton: "ml-2 text-xl bg-white rounded-full p-1 hover:bg-red-500 transition duration-300 transform hover:scale-110",
                             }}
                         >
                             <span className={`inline-block w-2 h-2 rounded-full mr-2 ${dotColor}`}></span>
-                            {selection.item}
+                            {label}
                         </Chip>
                     );
                 })}
@@ -75,7 +78,6 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
                             Reset
                         </button>
                     </div>
-                    
                 </CardHeader>
                 <CardBody className="mt-4">
                     <div className="selections-container">
