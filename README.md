@@ -10,6 +10,24 @@ CareerBot-RAG is a project that analyzes CVs and provides skill and occupation s
 
 ## Installation
 
+### Environement
+
+1. Create a venv :
+   ```
+   python -m venv env
+   ```
+2. Activate venv :
+
+   Windows :
+   ```
+   .\env\Scripts\activate
+   ```
+
+   Unix or MacOS :
+   ```
+   source env/bin/activate
+   ```
+
 ### Backend
 
 1. Install Python dependencies:
