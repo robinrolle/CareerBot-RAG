@@ -49,8 +49,8 @@ CareerBot-RAG is a project that analyzes CVs and provides skill and occupation s
 
    - `EMBEDDING_MODEL_NAME`: The OpenAI model used for generating embeddings (default: "text-embedding-3-small")
    - `GENERATION_MODEL_NAME`: The OpenAI model used for text generation (default: "gpt-4o-mini")
-   - `NUMBER_DOC_PER_ITEM`: Number of documents retrieved for each item from the vector database (default: 1)
-   - `LLM_MAX_PICKS`: Maximum number of items the LLM can pick [skills, occupations] (default: [15, 5])
+   - `NUMBER_DOC_PER_ITEM`: Number of documents retrieved for each item from the vector database. The higher the more items will be given to the context of the LLM picking step (default: 1). 
+   - `LLM_MAX_PICKS`: Maximum number of items identified from the CV shown to the user [skills, occupations] (default: [15, 5])
    - `NB_SUGGESTED_SKILLS`: Number of skills suggested to the user (default: 20)
    - `NB_SUGGESTED_OCCUPATIONS`: Number of occupations suggested to the user (default: 10)
 
@@ -138,6 +138,6 @@ The frontend will be available at `http://localhost:3000`.
 
 ### Notes
 - This work was done as a project for a Haaga-Helia thesis
-- Ensure you have sufficient OpenAI API credits
+- This project uses Open AI's model. each call costs money. Ensure you have sufficient OpenAI API credits
 - The application uses the ESCO (European Skills, Competences, Qualifications and Occupations) dataset
 - The API key shown have been revoked
