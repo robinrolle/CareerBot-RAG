@@ -4,7 +4,7 @@ from .models import ProcessResponse, SuggestionResponse
 from langchain_community.document_loaders import PyMuPDFLoader
 import logging
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from .database import faiss_index, faiss_metadata
+from .database import faiss_index_occupations, faiss_metadata_occupations, faiss_index_skills,faiss_metadata_skills
 from .templates import full_prompt
 import numpy as np
 from .config import EMBEDDING_MODEL_NAME, GENERATION_MODEL_NAME, NB_SUGGESTED_SKILLS, NB_SUGGESTED_OCCUPATIONS, OPENAI_API_KEY, NUMBER_DOC_PER_ITEM, LLM_MAX_PICKS
@@ -23,19 +23,30 @@ embedding_ef = OpenAIEmbeddings(model=EMBEDDING_MODEL_NAME)
 
 def query_faiss_index(query_embedding, doc_type, max_retrieved):
     query_embedding = np.array([query_embedding]).astype('float32')
+
+    # Use the appropriate index and metadata based on the document type
+    if doc_type == 'skill/competence':
+        faiss_index = faiss_index_skills
+        faiss_metadata = faiss_metadata_skills
+    elif doc_type == 'occupation':
+        faiss_index = faiss_index_occupations
+        faiss_metadata = faiss_metadata_occupations
+    else:
+        raise ValueError(f"Unknown document type: {doc_type}")
+
     distances, indices = faiss_index.search(query_embedding, max_retrieved)
 
     results = []
     for i, idx in enumerate(indices[0]):
-        if faiss_metadata['metadatas'][idx]['type'] == doc_type:
-            results.append({
-                'id': faiss_metadata['ids'][idx],
-                'document': faiss_metadata['documents'][idx],
-                'metadata': faiss_metadata['metadatas'][idx],
-                'distance': distances[0][i]
-            })
+        results.append({
+            'id': faiss_metadata['ids'][idx],
+            'document': faiss_metadata['documents'][idx],
+            'metadata': faiss_metadata['metadatas'][idx],
+            'distance': distances[0][i]
+        })
 
     return results[:max_retrieved]
+
 
 def extract_pdf(file_path: str) -> str:
     loader = PyMuPDFLoader(file_path)
@@ -96,7 +107,17 @@ def get_similar_documents_faiss(ids: List[str], doc_type: str, n_suggest: int) -
     suggestions_per_embedding = n_suggest // total_embeddings
     extra_suggestions = n_suggest % total_embeddings
 
-    # Get similar docs
+    # Choose the appropriate index and metadata based on doc_type
+    if doc_type == 'skill/competence':
+        faiss_index = faiss_index_skills
+        faiss_metadata = faiss_metadata_skills
+    elif doc_type == 'occupation':
+        faiss_index = faiss_index_occupations
+        faiss_metadata = faiss_metadata_occupations
+    else:
+        raise ValueError(f"Unknown document type: {doc_type}")
+
+    # Get embeddings from the FAISS index
     embeddings = []
     for id in ids:
         idx = faiss_metadata['ids'].index(id)
@@ -105,12 +126,12 @@ def get_similar_documents_faiss(ids: List[str], doc_type: str, n_suggest: int) -
 
     embeddings = np.array(embeddings).astype('float32')
 
+    # Perform the search
     distances, indices = faiss_index.search(embeddings, n_results_per_embedding)
 
     new_docs = []
     for doc_idx, (distances_row, indices_row) in enumerate(zip(distances, indices)):
-        count = suggestions_per_embedding + (
-            1 if doc_idx < extra_suggestions else 0)
+        count = suggestions_per_embedding + (1 if doc_idx < extra_suggestions else 0)
         suggestions_added = 0
 
         for dist, idx in zip(distances_row, indices_row):
@@ -127,10 +148,10 @@ def get_similar_documents_faiss(ids: List[str], doc_type: str, n_suggest: int) -
                 used_ids.add(doc_id)
                 suggestions_added += 1
 
-            if suggestions_added >= count:  # suggestion number limit
+            if suggestions_added >= count:  # Stop once the required number of docs is found
                 break
 
-    # Sort doc by relevance higher to lower
+    # Sort docs by distance (relevance)
     new_docs.sort(key=lambda x: x['distance'])
 
     final_docs = new_docs[:n_suggest + 1]
@@ -138,6 +159,7 @@ def get_similar_documents_faiss(ids: List[str], doc_type: str, n_suggest: int) -
     logger.info(f"Found {len(final_docs)} similar {doc_type}")
 
     return final_docs
+
 
 
 async def process_cv(file_path: str) -> ProcessResponse:
