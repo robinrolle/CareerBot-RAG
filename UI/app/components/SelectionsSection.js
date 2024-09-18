@@ -41,13 +41,13 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
 
         return (
             <div className="flex gap-2 flex-wrap">
-                {selections.map(selection => {
+                {selections.map((selection, index) => {
                     const option = options.find(opt => opt.value === selection.id);
                     const dotColor = getRelevanceColor(selection.relevance);
                     return (
                         <Chip
-                            key={selection.id}
-                            onClose={() => onRemove(selection.id)}
+                            key={`${selection.id}-${index}`}
+                            onClose={() => onRemove(selection.id, index)}
                             classNames={{
                                 base: "flex items-center px-3 py-1 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-full shadow cursor-default",
                                 closeButton: "ml-2 text-xl bg-white rounded-full p-1 hover:bg-red-500 transition duration-300 transform hover:scale-110",
@@ -75,7 +75,6 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
                             Reset
                         </button>
                     </div>
-                    
                 </CardHeader>
                 <CardBody className="mt-4">
                     <div className="selections-container">

@@ -108,35 +108,32 @@ export default function Home() {
 
   const handleSkillsChange = (newSkills) => {
     setSkillsData(prevSkills => {
-      const existingSkills = prevSkills.filter(skill => newSkills.includes(skill.id));
       const addedSkills = newSkills
         .filter(id => !prevSkills.some(skill => skill.id === id))
         .map(id => ({ id, item: skillsOptions.find(opt => opt.value === id)?.label || id, relevance: null }));
-      return [...existingSkills, ...addedSkills];
+      return [...prevSkills, ...addedSkills];
     });
-    // Mise à jour des suggestions
     setSuggestedSkills(prevSuggestions => prevSuggestions.filter(id => !newSkills.includes(id)));
   };
-
+  
   const handleOccupationsChange = (newOccupations) => {
     setOccupationsData(prevOccupations => {
-      const existingOccupations = prevOccupations.filter(occupation => newOccupations.includes(occupation.id));
       const addedOccupations = newOccupations
         .filter(id => !prevOccupations.some(occupation => occupation.id === id))
         .map(id => ({ id, item: occupationsOptions.find(opt => opt.value === id)?.label || id, relevance: null }));
-      return [...existingOccupations, ...addedOccupations];
+      return [...prevOccupations, ...addedOccupations];
     });
-    // Mise à jour des suggestions
     setSuggestedOccupations(prevSuggestions => prevSuggestions.filter(id => !newOccupations.includes(id)));
   };
 
-  const removeSkill = (skillId) => {
-    setSkillsData(prevSkills => prevSkills.filter(skill => skill.id !== skillId));
+  const removeSkill = (skillId, index) => {
+    setSkillsData(prevSkills => prevSkills.filter((_, i) => i !== index));
+  };
+  
+  const removeOccupation = (occupationId, index) => {
+    setOccupationsData(prevOccupations => prevOccupations.filter((_, i) => i !== index));
   };
 
-  const removeOccupation = (occupationId) => {
-    setOccupationsData(prevOccupations => prevOccupations.filter(occupation => occupation.id !== occupationId));
-  };
 
   const resetSelections = (type) => {
     if (type === 'skills') {
