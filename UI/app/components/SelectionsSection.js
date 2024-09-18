@@ -38,12 +38,15 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
         if (selections.length === 0) {
             return <div className="text-gray-500 mb-4">No selections</div>;
         }
-
+    
         return (
             <div className="flex gap-2 flex-wrap">
                 {selections.map((selection, index) => {
                     const option = options.find(opt => opt.value === selection.id);
                     const dotColor = getRelevanceColor(selection.relevance);
+                    const label = selection.relevance
+                        ? selection.item.charAt(0).toUpperCase() + selection.item.slice(1)
+                        : selection.item;
                     return (
                         <Chip
                             key={`${selection.id}-${index}`}
@@ -54,7 +57,7 @@ const SelectionsSection = ({ title, selections, options, placeholder, onChange, 
                             }}
                         >
                             <span className={`inline-block w-2 h-2 rounded-full mr-2 ${dotColor}`}></span>
-                            {selection.item}
+                            {label}
                         </Chip>
                     );
                 })}
