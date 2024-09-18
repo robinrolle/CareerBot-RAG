@@ -1,7 +1,7 @@
 import os
 import faiss
 import json
-from .config import EMBEDDING_MODEL_NAME, DATABASE_DIR, COLLECTION_NAME
+from .config import DATABASE_DIR, COLLECTION_NAME
 
 def load_faiss_index_and_metadata():
     faiss_index_path = os.path.join(DATABASE_DIR, f"{COLLECTION_NAME}_faiss.index")
@@ -12,7 +12,7 @@ def load_faiss_index_and_metadata():
 
     index = faiss.read_index(faiss_index_path)
 
-    with open(metadata_path, "r") as f:
+    with open(metadata_path, "r", encoding="utf-8") as f:
         metadata = json.load(f)
 
     return index, metadata
