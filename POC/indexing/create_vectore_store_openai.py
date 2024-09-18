@@ -5,6 +5,13 @@ import re
 from tqdm import tqdm
 import logging
 from openai import OpenAI
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Set the OpenAI API key
+os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY")
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -34,8 +41,6 @@ EMBEDDING_MODEL_NAME = "text-embedding-3-large"
 DATABASE_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'data','processed_data', 'ESCO_embeddings'))
 COLLECTION_NAME = generate_valid_collection_name(EMBEDDING_MODEL_NAME)
 BATCH_SIZE = 5461  # Define the batch size as per the chroma client limit, it's not chunking!
-
-os.environ['OPENAI_API_KEY'] = "<YOUR OPENAI API KEY>"
 
 # Setup OpenAI client
 client = OpenAI()

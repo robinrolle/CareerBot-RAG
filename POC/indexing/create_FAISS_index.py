@@ -6,6 +6,13 @@ import logging
 import numpy as np
 import faiss
 from openai import OpenAI
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Set the OpenAI API key
+os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -30,21 +37,13 @@ def generate_valid_collection_name(model_name):
 
 # Define paths and constants
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SOURCE_DATA_PATH = os.path.abspath(
-    os.path.join(BASE_DIR, '..', '..', 'data', 'ESCO dataset - v1.1.1 - classification - en - csv'))
+SOURCE_DATA_PATH = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'data', 'ESCO dataset - v1.1.1 - classification - en - csv'))
 EMBEDDING_MODEL_NAME = "text-embedding-3-small"
 INDEX_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'data', 'processed_data', 'FAISS_index'))
 COLLECTION_NAME = generate_valid_collection_name(EMBEDDING_MODEL_NAME)
 
-# Try to get the OpenAI API key from the environment variable
-api_key = os.getenv('OPENAI_API_KEY')
-
-# If the environment variable is not set, use the API key declared in the code
-if not api_key or api_key == '':
-    api_key = "sk-qOMmWrzGL6vM9JAUTkoTDgo6cyLE-Im5syuaAkZ6qZT3BlbkFJo7GMGShu7qhMvJ7cJVeMEWT6D5TF8e1FZuP7qzny8A"
-
 # Setup OpenAI client
-client = OpenAI(api_key=api_key)
+client = OpenAI()
 
 
 def get_embedding(text, model=EMBEDDING_MODEL_NAME):

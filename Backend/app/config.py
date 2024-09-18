@@ -1,10 +1,7 @@
 import re
 import os
 
-# Define your API key here
-OPENAI_API_KEY = "sk-hvoqGf1qkfbzp-mQVWyUBXgrtgMLosbyW69AOWYv-ZT3BlbkFJr0OJnLyCSUpNfxXWcGKZP_WlxN8CQpI35KLJQUtKYA"
-
-# Model's choice Open AI only
+# Model's choice (OpenAI only)
 EMBEDDING_MODEL_NAME = "text-embedding-3-small"
 GENERATION_MODEL_NAME = "gpt-4o-mini"
 

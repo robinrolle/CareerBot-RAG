@@ -7,14 +7,19 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from .database import faiss_index_occupations, faiss_metadata_occupations, faiss_index_skills,faiss_metadata_skills
 from .templates import full_prompt
 import numpy as np
-from .config import EMBEDDING_MODEL_NAME, GENERATION_MODEL_NAME, NB_SUGGESTED_SKILLS, NB_SUGGESTED_OCCUPATIONS, OPENAI_API_KEY, NUMBER_DOC_PER_ITEM, LLM_MAX_PICKS
+from .config import EMBEDDING_MODEL_NAME, GENERATION_MODEL_NAME, NB_SUGGESTED_SKILLS, NB_SUGGESTED_OCCUPATIONS, NUMBER_DOC_PER_ITEM, LLM_MAX_PICKS
 from .models import ExtractedItems, GradedItem
 from langchain_core.runnables import RunnableSequence
 from langchain_core.output_parsers import JsonOutputParser
 from langchain.prompts import ChatPromptTemplate
 import traceback
+from dotenv import load_dotenv
 
-os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
+# Load environment variables
+load_dotenv()
+
+# Set the OpenAI API key
+os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
