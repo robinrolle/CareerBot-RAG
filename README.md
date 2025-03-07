@@ -2,6 +2,8 @@
 
 CareerBot-RAG is a project that analyzes CVs and provides skill and occupation suggestions based on the ESCO dataset.
 
+published paper : https://www.theseus.fi/handle/10024/874901?show=full
+
 ## Prerequisites
 
 - Python 3.8+
